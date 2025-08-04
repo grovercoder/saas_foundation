@@ -4,6 +4,7 @@ from src.datastore.schema import create_tables_from_entity_definitions
 from src.datastore.manager import DatastoreManager
 from src.multi_tenant.manager import MultiTenantManager
 from src.payment_gateway.manager import PaymentGatewayManager
+from src.authorization.manager import AuthorizationManager
 
 def main():
     load_dotenv() # Load environment variables from .env file
@@ -32,8 +33,22 @@ def main():
             }
         }
         datastore_manager = DatastoreManager(example_entity_definitions)
-        multi_tenant_manager = MultiTenantManager(datastore_manager)
+        multi_tenant_manager = MultiTenantManager(datastore_manager, authorization_manager)
         payment_gateway_manager = PaymentGatewayManager()
+        authorization_manager = AuthorizationManager()
+
+        # Example: Registering permissions
+        example_permissions = [
+            {"key": "user:create", "name": "Users Create", "description": "Can create new user accounts."},
+            {"key": "user:read", "name": "Users Read", "description": "Can view user account details."},
+            {"key": "account:manage", "name": "Account Management", "description": "Can manage account settings."}
+        ]
+        try:
+            authorization_manager.register_permissions(example_permissions)
+            print("Permissions registered successfully.")
+            print("Registered permissions:", authorization_manager.get_registered_permissions())
+        except ValueError as e:
+            print(f"Error registering permissions: {e}")
 
         # Example usage of multi_tenant_manager
         try:

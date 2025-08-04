@@ -4,6 +4,7 @@ import bcrypt
 from datetime import datetime, timedelta
 import os
 import secrets
+from src.authorization.manager import AuthorizationManager # Import AuthorizationManager
 
 # Entity definitions for the multi_tenant module
 multi_tenant_entity_definitions = {
@@ -22,12 +23,29 @@ multi_tenant_entity_definitions = {
     }
 }
 
+# Permissions exposed by the multi_tenant module
+MODULE_PERMISSIONS = [
+    {"key": "account:create", "name": "Account Create", "description": "Allows creation of new accounts."},
+    {"key": "account:read", "name": "Account Read", "description": "Allows reading account details."},
+    {"key": "account:update", "name": "Account Update", "description": "Allows updating account details."},
+    {"key": "account:delete", "name": "Account Delete", "description": "Allows deletion of accounts."},
+    {"key": "user:create", "name": "User Create", "description": "Allows creation of new users within an account."},
+    {"key": "user:read", "name": "User Read", "description": "Allows reading user details."},
+    {"key": "user:update", "name": "User Update", "description": "Allows updating user details."},
+    {"key": "user:delete", "name": "User Delete", "description": "Allows deletion of users."},
+    {"key": "user:authenticate", "name": "User Authenticate", "description": "Allows users to authenticate."},
+    {"key": "user:reset_password", "name": "User Reset Password", "description": "Allows users to reset their password."},
+]
+
 class MultiTenantManager:
-    def __init__(self, datastore_manager: DatastoreManager):
+    def __init__(self, datastore_manager: DatastoreManager, authorization_manager: AuthorizationManager | None = None):
         self.datastore = datastore_manager
         self.datastore.register_entity_definitions(multi_tenant_entity_definitions)
         self.accounts_dao = self.datastore.get_dao("accounts")
         self.users_dao = self.datastore.get_dao("users")
+
+        if authorization_manager:
+            authorization_manager.register_permissions(MODULE_PERMISSIONS)
 
     def _hash_password(self, password: str) -> str:
         return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')

@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 
 from src.datastore.manager import DatastoreManager
 from src.datastore.database import get_db_connection, execute_query
-from src.multi_tenant.manager import MultiTenantManager, multi_tenant_entity_definitions
+from src.multi_tenant.manager import MultiTenantManager, multi_tenant_entity_definitions, MODULE_PERMISSIONS
+from src.authorization.manager import AuthorizationManager # Import AuthorizationManager
 from src.multi_tenant.models import Account, User
 
 # Use an in-memory database for testing
@@ -34,8 +35,32 @@ def setup_multi_tenant_db(db_connection):
     yield datastore_manager
 
 @pytest.fixture(scope="function")
-def multi_tenant_manager(setup_multi_tenant_db):
+def auth_manager():
+    return AuthorizationManager()
+
+@pytest.fixture(scope="function")
+def multi_tenant_manager(setup_multi_tenant_db, auth_manager):
+    return MultiTenantManager(setup_multi_tenant_db, auth_manager)
+
+@pytest.fixture(scope="function")
+def multi_tenant_manager_no_auth(setup_multi_tenant_db):
     return MultiTenantManager(setup_multi_tenant_db)
+
+
+def test_multi_tenant_manager_registers_permissions(auth_manager, setup_multi_tenant_db):
+    # Create manager with auth_manager
+    MultiTenantManager(setup_multi_tenant_db, auth_manager)
+    registered_permissions = auth_manager.get_registered_permissions()
+    assert len(registered_permissions) == len(MODULE_PERMISSIONS)
+    for perm in MODULE_PERMISSIONS:
+        assert perm in registered_permissions
+
+def test_multi_tenant_manager_no_auth_registration(setup_multi_tenant_db):
+    # Ensure no permissions are registered if auth_manager is not provided
+    fresh_auth_manager = AuthorizationManager()
+    # Initialize MultiTenantManager without passing an authorization_manager
+    MultiTenantManager(setup_multi_tenant_db, authorization_manager=None)
+    assert len(fresh_auth_manager.get_registered_permissions()) == 0
 
 
 def test_create_account(multi_tenant_manager):

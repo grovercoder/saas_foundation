@@ -16,7 +16,7 @@ This application will serve as a central orchestration layer, acting as a "comma
 
 * **Library Management:** The system must provide a way to **add, remove, and update** external libraries dynamically without requiring a full application redeploy.  
 * **Capability Discovery:** Upon importing a new library, the application must be able to **discover and register** the specific functions or "capabilities" it provides.  
-  * **Entity Definition Discovery:** The system must be able to discover entity definitions (e.g., required database tables and fields) provided by external libraries. The **Datastore Module** will use this information to automatically create the necessary database tables and generate corresponding Data Access Objects (DAOs) for use by the orchestrator.  
+  * **Entity Definition Discovery:** External libraries must be able to register their entity definitions (e.g., required database tables and fields) with the **Datastore Module**. The Datastore Module will use this information to automatically create the necessary database tables and generate corresponding Data Access Objects (DAOs) for use by the orchestrator.  
 * **Workflow Definition:** Users must be able to define and configure **multi-step workflows** that chain together capabilities from different external libraries.  
 * **Execution Engine:** The application must have a robust engine for executing these workflows, handling the sequence of calls to external libraries and managing the flow of data between them.  
 * **Configuration:** The system should allow for easy configuration of each external library, such as API keys, endpoints, and specific parameters required for its operation.  
@@ -29,19 +29,17 @@ The application will include the following internal modules to provide core func
 *   **Datastore Module:**
     *   The module will be a separate package within the application.
     *   It must use **SQLite3** for all database operations.
-    *   It will **not** use an Object-Relational Mapper (ORM), relying on direct
-     database queries.
-    *   It will retrieve database credentials and settings from environment
-     variables, which will be loaded from a .env file.
+    *   It will **not** use an Object-Relational Mapper (ORM), relying on direct database queries.
+    *   It will retrieve database credentials and settings from environment variables, which will be loaded from a .env file.
     *   All exposed ID values from the datastore will be obfuscated using **HASHIDs**.
-* **Multi-tenant Management:** This system will handle the management of accounts, account users, and their associated roles.  
-* **Payment Gateway Wrapper:** A module that provides a consistent interface for interacting with various payment gateways.  
-* **Subscription Management:** This system will handle the setup and management of user subscriptions, including the definition of **subscription tiers**, associated **features**, and specific **limits** (such as maximum users or storage).  
-* **Authorization System:** A system responsible for managing user permissions and access control to various parts of the application, utilizing a **hybrid role-based access control list (RBAC) system**.  
-* **Templating System:** A module for generating dynamic content, primarily for the presentation layer.  
-* **Dynamic Form Definitions:** A package for defining and rendering dynamic forms, based on the **Form.io JavaScript SDK** (not a hosted or API-based solution).  
-* **Workflow Management Library:** A business process management (BPM) style library for defining and executing multi-step workflows. Each step will have its own trigger and action, with actions including things like "calculate," "notify," and "email."  
-* **Web Service:** The central entry point for the application's presentation layer, providing an API or web interface.
+*   **Multi-tenant Management:** This system will handle the management of accounts, account users, and their associated roles. Users must belong to an existing account. User records will include a username, a hashed password (never plain text), a reset token, and the timestamp the token was created. This module will also define and register its own specific permissions with the Authorization System.
+*   **Payment Gateway Wrapper:** A module that provides a consistent interface for interacting with various payment gateways. It will include a **Stripe adapter** that utilizes the Stripe API and provides a method to handle webhook events.
+*   **Subscription Management:** This system will handle the setup and management of user subscriptions, including the definition of **subscription tiers**, associated **features**, and specific **limits** (such as maximum users or storage).
+*   **Authorization System:** A system responsible for managing user permissions and access control to various parts of the application, utilizing a **hybrid role-based access control list (RBAC) system**. It provides a mechanism for other modules to register their exposed permissions.
+*   **Templating System:** A module for generating dynamic content, primarily for the presentation layer.
+*   **Dynamic Form Definitions:** A package for defining and rendering dynamic forms, based on the **Form.io JavaScript SDK** (not a hosted or API-based solution).
+*   **Workflow Management Library:** A business process management (BPM) style library for defining and executing multi-step workflows. Each step will have its own trigger and action, with actions including things like "calculate," "notify," and "email."
+*   **Web Service:** The central entry point for the application's presentation layer, providing an API or web interface.
 
 ### **Presentation Layer**
 
