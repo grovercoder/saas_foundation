@@ -1,0 +1,67 @@
+# **Initial Requirements for a Library Orchestration Application**
+
+### **Vision**
+
+This application will serve as a central orchestration layer, acting as a "command center" to manage and execute capabilities from a collection of external, custom-built libraries. The core purpose is not to create new functionality itself, but to seamlessly integrate and combine the power of these external services into complex workflows. The application's value is in its ability to discover, manage, and execute these imported capabilities efficiently and reliably.
+
+### **Core Concepts**
+
+* **Orchestration Layer:** This is the application itself. It provides the central logic for managing workflows, communicating with external libraries, and handling system-level concerns like security and error handling.  
+* **External Libraries:** These are the custom solutions that provide the actual business logic and core functionality. They are built and maintained outside of this application.  
+* **Internal Systems:** These are core libraries that, while part of the application, are developed as separate packages to provide foundational services like data persistence and user management.  
+* **Connectors/Adapters:** These are the interfaces that allow the orchestration layer to communicate with the specific APIs of each external library. A well-designed connector will translate the orchestration layer's requests into a format that the external library can understand and vice-versa.  
+* **Dependency Injection:** The application will be designed to create and manage objects from these internal and external systems, injecting them into other components as dependencies. For example, a MultiTenants object would be created and injected with a Datastore object.
+
+### **Functional Requirements**
+
+* **Library Management:** The system must provide a way to **add, remove, and update** external libraries dynamically without requiring a full application redeploy.  
+* **Capability Discovery:** Upon importing a new library, the application must be able to **discover and register** the specific functions or "capabilities" it provides.  
+  * **Entity Definition Discovery:** The system must be able to discover entity definitions (e.g., required database tables and fields) provided by external libraries. The **Datastore Module** will use this information to automatically create the necessary database tables and generate corresponding Data Access Objects (DAOs) for use by the orchestrator.  
+* **Workflow Definition:** Users must be able to define and configure **multi-step workflows** that chain together capabilities from different external libraries.  
+* **Execution Engine:** The application must have a robust engine for executing these workflows, handling the sequence of calls to external libraries and managing the flow of data between them.  
+* **Configuration:** The system should allow for easy configuration of each external library, such as API keys, endpoints, and specific parameters required for its operation.  
+* **Error Handling:** It needs to implement a comprehensive strategy for handling errors originating from external libraries, including **retries, fallbacks, and notifications**.
+
+### **Internal Systems & Module Requirements**
+
+The application will include the following internal modules to provide core functionality:
+
+*   **Datastore Module:**
+    *   The module will be a separate package within the application.
+    *   It must use **SQLite3** for all database operations.
+    *   It will **not** use an Object-Relational Mapper (ORM), relying on direct
+     database queries.
+    *   It will retrieve database credentials and settings from environment
+     variables, which will be loaded from a .env file.
+    *   All exposed ID values from the datastore will be obfuscated using **HASHIDs**.
+* **Multi-tenant Management:** This system will handle the management of accounts, account users, and their associated roles.  
+* **Payment Gateway Wrapper:** A module that provides a consistent interface for interacting with various payment gateways.  
+* **Subscription Management:** This system will handle the setup and management of user subscriptions, including the definition of **subscription tiers**, associated **features**, and specific **limits** (such as maximum users or storage).  
+* **Authorization System:** A system responsible for managing user permissions and access control to various parts of the application, utilizing a **hybrid role-based access control list (RBAC) system**.  
+* **Templating System:** A module for generating dynamic content, primarily for the presentation layer.  
+* **Dynamic Form Definitions:** A package for defining and rendering dynamic forms, based on the **Form.io JavaScript SDK** (not a hosted or API-based solution).  
+* **Workflow Management Library:** A business process management (BPM) style library for defining and executing multi-step workflows. Each step will have its own trigger and action, with actions including things like "calculate," "notify," and "email."  
+* **Web Service:** The central entry point for the application's presentation layer, providing an API or web interface.
+
+### **Presentation Layer**
+
+The various internal systems (Multi-tenant Management, Payment Gateway, Subscription Management, Authorization, Templating, Dynamic Forms, and Workflow Management) will work together to support the **Web Service**. This web service will act as the application's presentation layer, providing the user interface and APIs that interact with all the underlying functionality.
+
+### **Development Environment & Standards**
+
+* **Language:** Python  
+* **Package Management:** The **uv** tool will be used for all package management.  
+  * To initialize the project, run uv init.  
+  * To add dependencies, use uv add \<package\_name\>.  
+  * To run scripts or commands, use uv run \<command\>.  
+* **Code Standards:** The code must adhere to standards enforced by **black** for formatting and **pylint** for style and static analysis.  
+* **Testing:** All unit and integration tests will be written using **pytest**. Tests should be run using the command uv run pytest.
+
+### **Non-Functional Requirements**
+
+* **Scalability:** The application's architecture must be designed to **scale horizontally**, allowing it to handle an increasing number of imported libraries and a high volume of simultaneous workflow executions.  
+* **Reliability:** The system should be highly reliable and resilient. The failure of one external library should **not cause the entire orchestrator to fail**.  
+* **Security:** It must include a robust security model for **authentication and authorization**, ensuring that only authorized users or systems can define and execute workflows.  
+* **Performance:** The orchestration layer should add minimal latency to the overall workflow execution. Communication with external libraries should be **optimized for speed**.  
+* **Maintainability:** The use of a modular design with clear separation of concerns (e.g., the orchestration engine and the connectors) will ensure the system is easy to maintain, debug, and upgrade.  
+* **Observability:** The application must provide **logging and monitoring** capabilities to track workflow execution, success rates, and errors.
