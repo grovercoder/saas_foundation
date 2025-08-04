@@ -34,7 +34,18 @@ The application will include the following internal modules to provide core func
     *   All exposed ID values from the datastore will be obfuscated using **HASHIDs**.
 *   **Multi-tenant Management:** This system will handle the management of accounts, account users, and their associated roles. Users must belong to an existing account. User records will include a username, a hashed password (never plain text), a reset token, and the timestamp the token was created. This module will also define and register its own specific permissions with the Authorization System.
 *   **Payment Gateway Wrapper:** A module that provides a consistent interface for interacting with various payment gateways. It will include a **Stripe adapter** that utilizes the Stripe API and provides a method to handle webhook events.
-*   **Subscription Management:** This system will handle the setup and management of user subscriptions, including the definition of **subscription tiers**, associated **features**, and specific **limits** (such as maximum users or storage).
+*   **Subscription Management:** This system will handle the setup and management of user subscriptions. It consists of two main parts:
+    *   **Tier/Feature/Limit Management:** Defines **subscription tiers**, associated **features**, and specific **limits** (such as maximum users or storage).
+        *   **Limits:** Define things that might need to be limited in a tier. They have a "key", "name", "description", and "default_value". The specific value to apply to a limit is set when the limit is added to a tier. A tier may have zero or more limits.
+        *   **Features:** Define capabilities provided by a tier. They have a "key", "name", "description", and a list of "permissions" (keys for relevant permissions a feature must have). These permissions become the default list to check for when verifying a user's authorization based on their account's tier.
+        *   **Tiers:** Consist of "key", "status", "name", "description", "monthly_cost", "yearly_cost", "features" (list of feature keys), and "limits" (dictionary of limit_key: value).
+        *   When a tier is created, a database record is created. A corresponding Stripe product is also created.
+        *   A tier cannot be removed unless it is deactivated (status set to "deactivated"). It cannot be deactivated unless the tier has no active accounts associated with it.
+        *   Tier status can be set to "active:public", "active:private", " "draft", or "deactivated".
+    *   **Subscription Management:** Handles creating, updating, and managing individual subscriptions.
+        *   When a user subscribes, the Stripe Webhook for `checkout.session.completed` is received.
+        *   Upon receiving this webhook, a subscription record is created in the database.
+        *   An account and a default user are created (if they don't already exist), and the account is linked to the subscription record, which also indicates the associated tier.
 *   **Authorization System:** A system responsible for managing user permissions and access control to various parts of the application, utilizing a **hybrid role-based access control list (RBAC) system**. It provides a mechanism for other modules to register their exposed permissions.
 *   **Templating System:** A module for generating dynamic content, primarily for the presentation layer.
 *   **Dynamic Form Definitions:** A package for defining and rendering dynamic forms, based on the **Form.io JavaScript SDK** (not a hosted or API-based solution).

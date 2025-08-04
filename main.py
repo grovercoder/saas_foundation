@@ -5,6 +5,7 @@ from src.datastore.manager import DatastoreManager
 from src.multi_tenant.manager import MultiTenantManager
 from src.payment_gateway.manager import PaymentGatewayManager
 from src.authorization.manager import AuthorizationManager
+from src.subscription.manager import SubscriptionManager
 
 def main():
     load_dotenv() # Load environment variables from .env file
@@ -36,6 +37,7 @@ def main():
         multi_tenant_manager = MultiTenantManager(datastore_manager, authorization_manager)
         payment_gateway_manager = PaymentGatewayManager()
         authorization_manager = AuthorizationManager()
+        subscription_manager = SubscriptionManager(datastore_manager, payment_gateway_manager, authorization_manager)
 
         # Example: Registering permissions
         example_permissions = [

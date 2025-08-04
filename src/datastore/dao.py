@@ -65,3 +65,22 @@ class BaseDAO:
             raise ValueError("Invalid hash ID provided for delete.")
         query = f"DELETE FROM {self.table_name} WHERE id = ?"
         execute_query(query, (int_id,))
+
+    def find_one_by_column(self, column_name, value):
+        query = f"SELECT * FROM {self.table_name} WHERE {column_name} = ?"
+        row = fetch_one(query, (value,))
+        if row:
+            row_dict = dict(row)
+            row_dict['id'] = self._encode_id(row_dict['id'])
+            return row_dict
+        return None
+
+    def find_by_column(self, column_name, value):
+        query = f"SELECT * FROM {self.table_name} WHERE {column_name} = ?"
+        rows = fetch_all(query, (value,))
+        encoded_rows = []
+        for row in rows:
+            row_dict = dict(row)
+            row_dict['id'] = self._encode_id(row_dict['id'])
+            encoded_rows.append(row_dict)
+        return encoded_rows
