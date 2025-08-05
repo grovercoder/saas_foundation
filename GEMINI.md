@@ -31,6 +31,7 @@ Always review @docs/application_requirements.md to understand the intent of the 
 
 *   **Revision Control**
     *   Use `git`
+    *   Use the "summary / body" structure for commit messages.
     *   When committing create a `commit.msg` file that contains the commit message.  Then use ```git commit -F commit.msg && rm commit.msg``` to commit the changes.
 
 ## 4. Internal Modules & Specific Requirements

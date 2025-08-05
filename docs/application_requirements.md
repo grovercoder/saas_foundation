@@ -33,6 +33,11 @@ The application will include the following internal modules to provide core func
     *   It will retrieve database connection details (DB_PATH, DB_NAME, DB_PORT, DB_USER, DB_PASS) from environment variables, which will be loaded from a .env file.
     *   The system will ensure the database directory (DB_PATH) exists, creating it if necessary.
     *   All exposed ID values from the datastore will be integer IDs.
+*   **Logging System:**
+    *   A dedicated module for centralized logging.
+    *   It should provide a consistent interface for other modules to log messages.
+    *   Support for different log levels (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+    *   Configurable output destinations (e.g., console, file).
 *   **Multi-tenant Management:** This system will handle the management of accounts, account users, and their associated roles. Users must belong to an existing account. User records will include a username, a hashed password (never plain text), a reset token, and the timestamp the token was created. This module will also define and register its own specific permissions with the Authorization System.
 *   **Payment Gateway Wrapper:** A module that provides a consistent interface for interacting with various payment gateways. It will include a **Stripe adapter** that utilizes the Stripe API and provides a method to handle webhook events.
 *   **Subscription Management:** This system will handle the setup and management of user subscriptions. It consists of two main parts:
@@ -51,6 +56,7 @@ The application will include the following internal modules to provide core func
 *   **Templating System:** A module for generating dynamic content, primarily for the presentation layer.
 *   **Dynamic Form Definitions:** A package for defining and rendering dynamic forms, based on the **Form.io JavaScript SDK** (not a hosted or API-based solution).
 *   **Workflow Management Library:** A business process management (BPM) style library for defining and executing multi-step workflows. Each step will have its own trigger and action, with actions including things like "calculate," "notify," and "email."
+*   **Email Services:** A custom library that provides SMTP services for sending and managing outgoing emails.
 *   **Web Service:** The central entry point for the application's presentation layer, providing an API or web interface.
 
 ### **Presentation Layer**
