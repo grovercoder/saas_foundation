@@ -23,7 +23,7 @@ def get_db_connection(logger):
 
 def execute_query(query, params=(), conn=None, logger=None):
     if conn is None:
-        conn = get_db_connection()
+        conn = get_db_connection(logger)
         close_conn = True
     else:
         close_conn = False
@@ -42,7 +42,7 @@ def execute_query(query, params=(), conn=None, logger=None):
 
 def fetch_one(query, params=(), conn=None, logger=None):
     if conn is None:
-        conn = get_db_connection()
+        conn = get_db_connection(logger)
         close_conn = True
     else:
         close_conn = False
@@ -57,7 +57,7 @@ def fetch_one(query, params=(), conn=None, logger=None):
 
 def fetch_all(query, params=(), conn=None, logger=None):
     if conn is None:
-        conn = get_db_connection()
+        conn = get_db_connection(logger)
         close_conn = True
     else:
         close_conn = False
