@@ -14,30 +14,37 @@ from src.subscription.models import Limit, Feature, Tier, Subscription
 # Use an in-memory database for testing
 @pytest.fixture(scope="function")
 def db_connection():
-    original_db_url = os.getenv("DATABASE_URL")
+    original_db_path = os.getenv("DB_PATH")
+    original_db_name = os.getenv("DB_NAME")
 
-    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+    os.environ["DB_PATH"] = "" # Set DB_PATH to empty for in-memory tests
+    os.environ["DB_NAME"] = ":memory:"
 
     conn = get_db_connection()
     yield conn
     conn.close()
 
-    if original_db_url is not None:
-        os.environ["DATABASE_URL"] = original_db_url
+    if original_db_path is not None:
+        os.environ["DB_PATH"] = original_db_path
     else:
-        del os.environ["DATABASE_URL"]
+        del os.environ["DB_PATH"]
+
+    if original_db_name is not None:
+        os.environ["DB_NAME"] = original_db_name
+    else:
+        del os.environ["DB_NAME"]
 
     
 
 @pytest.fixture(scope="function")
 def setup_subscription_db(db_connection):
     # Ensure tables are clean before each test
-    execute_query("DROP TABLE IF EXISTS subscriptions")
-    execute_query("DROP TABLE IF EXISTS tiers")
-    execute_query("DROP TABLE IF EXISTS features")
-    execute_query("DROP TABLE IF EXISTS limits")
+    execute_query("DROP TABLE IF EXISTS subscriptions", conn=db_connection)
+    execute_query("DROP TABLE IF EXISTS tiers", conn=db_connection)
+    execute_query("DROP TABLE IF EXISTS features", conn=db_connection)
+    execute_query("DROP TABLE IF EXISTS limits", conn=db_connection)
 
-    datastore_manager = DatastoreManager([Limit, Feature, Tier, Subscription])
+    datastore_manager = DatastoreManager([Limit, Feature, Tier, Subscription], connection=db_connection)
     yield datastore_manager
 
 @pytest.fixture(scope="function")

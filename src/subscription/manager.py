@@ -286,7 +286,7 @@ class SubscriptionManager:
             # Fetch subscription from Stripe to get details
             stripe_subscription = self.payment_gateway.stripe.get_subscription(subscription_id) # Assuming this method exists
             if not stripe_subscription:
-                print(f"Error: Stripe subscription {subscription_id} not found.")
+                raise ValueError(f"Error: Stripe subscription {subscription_id} not found.")
                 return None
 
             # Get tier based on Stripe product ID
@@ -299,11 +299,9 @@ class SubscriptionManager:
                     break
             
             if not tier:
-                print(f"Debug: Stripe product ID from webhook: {stripe_product_id}")
                 all_tiers_debug = self.datastore.get_all("tiers")
-                for t_data_debug in all_tiers_debug:
-                    print(f"Debug: Tier in DB: {t_data_debug.get('key')}, Stripe Product ID: {t_data_debug.get('stripe_product_id')}")
-                print(f"Error: Tier not found for Stripe product ID {stripe_product_id}.")
+                
+                raise ValueError(f"Error: Tier not found for Stripe product ID {stripe_product_id}.")
                 return None
 
             # Create account and user if they don't exist
@@ -324,7 +322,7 @@ class SubscriptionManager:
                 datetime.fromtimestamp(stripe_subscription['current_period_end'], tz=timezone.utc),
                 stripe_subscription['cancel_at_period_end']
             )
-            print(f"Subscription created for account {account.id} and tier {tier.key}.")
+            
             return subscription # Return the Subscription object
 
         # Add other webhook event types here (e.g., invoice.payment_succeeded, customer.subscription.updated)

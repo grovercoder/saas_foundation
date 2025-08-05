@@ -21,7 +21,7 @@ class AuthorizationManager:
                 raise ValueError(f"Permission with key '{permission["key"]}' already registered.")
 
             self._registered_permissions.append(permission)
-        print(f"Registered {len(permissions)} permissions.")
+        
 
     def get_registered_permissions(self) -> List[Dict[str, str]]:
         """Returns a list of all registered permissions."""

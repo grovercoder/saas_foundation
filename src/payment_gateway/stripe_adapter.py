@@ -34,7 +34,7 @@ class StripeAdapter(PaymentGatewayAdapter):
                 self.webhook_secret
             )
             # Process the event
-            print(f"Received webhook event: {event['type']}")
+            
             # In a real application, you would have a dispatcher here
             # to handle different event types (e.g., checkout.session.completed)
             return event.to_dict()

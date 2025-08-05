@@ -12,29 +12,36 @@ from src.multi_tenant.models import Account, User
 # Use an in-memory database for testing
 @pytest.fixture(scope="function")
 def db_connection():
-    original_db_url = os.getenv("DATABASE_URL")
+    original_db_path = os.getenv("DB_PATH")
+    original_db_name = os.getenv("DB_NAME")
 
-    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+    os.environ["DB_PATH"] = "" # Set DB_PATH to empty for in-memory tests
+    os.environ["DB_NAME"] = ":memory:"
 
     conn = get_db_connection()
     yield conn
     conn.close()
 
-    if original_db_url is not None:
-        os.environ["DATABASE_URL"] = original_db_url
+    if original_db_path is not None:
+        os.environ["DB_PATH"] = original_db_path
     else:
-        del os.environ["DATABASE_URL"]
+        del os.environ["DB_PATH"]
+
+    if original_db_name is not None:
+        os.environ["DB_NAME"] = original_db_name
+    else:
+        del os.environ["DB_NAME"]
 
     
 
 @pytest.fixture(scope="function")
 def setup_multi_tenant_db(db_connection):
     # Ensure tables are clean before each test
-    execute_query("DROP TABLE IF EXISTS users")
-    execute_query("DROP TABLE IF EXISTS accounts")
+    execute_query("DROP TABLE IF EXISTS users", conn=db_connection)
+    execute_query("DROP TABLE IF EXISTS accounts", conn=db_connection)
 
     # Initialize DatastoreManager with multi_tenant entities
-    datastore_manager = DatastoreManager([Account, User])
+    datastore_manager = DatastoreManager([Account, User], connection=db_connection)
     yield datastore_manager
 
 @pytest.fixture(scope="function")

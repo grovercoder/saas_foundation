@@ -23,20 +23,27 @@ class TestProduct:
 # Use an in-memory database for testing
 @pytest.fixture(scope="function")
 def db_connection():
-    # Temporarily set DATABASE_URL to an in-memory database
-    original_db_url = os.getenv("DATABASE_URL")
+    # Temporarily set environment variables for testing
+    original_db_name = os.getenv("DB_NAME")
+    original_db_path = os.getenv("DB_PATH")
 
-    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+    os.environ["DB_NAME"] = ":memory:"
+    os.environ["DB_PATH"] = "" # Set DB_PATH to empty for in-memory tests
 
     conn = get_db_connection()
     yield conn
     conn.close()
 
-    # Restore original DATABASE_URL
-    if original_db_url is not None:
-        os.environ["DATABASE_URL"] = original_db_url
+    # Restore original environment variables
+    if original_db_name is not None:
+        os.environ["DB_NAME"] = original_db_name
     else:
-        del os.environ["DATABASE_URL"]
+        del os.environ["DB_NAME"]
+
+    if original_db_path is not None:
+        os.environ["DB_PATH"] = original_db_path
+    else:
+        del os.environ["DB_PATH"]
 
 
 
@@ -47,10 +54,10 @@ def datastore_manager(datastore_manager_with_models):
 @pytest.fixture(scope="function")
 def datastore_manager_with_models(db_connection):
     # Ensure tables are clean before each test
-    execute_query("DROP TABLE IF EXISTS testusers")
-    execute_query("DROP TABLE IF EXISTS testproducts")
-    # Initialize DatastoreManager with models
-    manager = DatastoreManager([TestUser, TestProduct])
+    db_connection.execute("DROP TABLE IF EXISTS testusers")
+    db_connection.execute("DROP TABLE IF EXISTS testproducts")
+    # Initialize DatastoreManager with models and pass the connection
+    manager = DatastoreManager([TestUser, TestProduct], connection=db_connection)
     return manager
 
 
@@ -107,23 +114,21 @@ def test_delete_user(datastore_manager_with_models):
     assert deleted_user is None
 
 
-def test_datastore_manager_initialization():
-    manager = DatastoreManager([TestUser, TestProduct])
+def test_datastore_manager_initialization(db_connection):
+    manager = DatastoreManager([TestUser, TestProduct], connection=db_connection)
     assert manager.get_dao("testusers") is not None
     assert isinstance(manager.get_dao("testusers"), BaseDAO)
     assert manager.get_dao("testproducts") is not None
 
     # Test that tables are created
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = db_connection.cursor()
     cursor.execute("PRAGMA table_info(testusers)")
     assert len(cursor.fetchall()) > 0
     cursor.execute("PRAGMA table_info(testproducts)")
     assert len(cursor.fetchall()) > 0
-    conn.close()
 
 
-def test_datastore_manager_register_entities(datastore_manager_with_models):
+def test_datastore_manager_register_entities(datastore_manager_with_models, db_connection):
     manager = datastore_manager_with_models
     
     @dataclass
@@ -144,13 +149,11 @@ def test_datastore_manager_register_entities(datastore_manager_with_models):
     assert manager.get_dao("newentity2s") is not None
 
     # Verify tables are created
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = db_connection.cursor()
     cursor.execute("PRAGMA table_info(newentity1s)")
     assert len(cursor.fetchall()) > 0
     cursor.execute("PRAGMA table_info(newentity2s)")
     assert len(cursor.fetchall()) > 0
-    conn.close()
 
 
 def test_datastore_manager_get_dao_invalid_entity(datastore_manager_with_models):
