@@ -6,6 +6,7 @@ from src.payment_gateway.manager import PaymentGatewayManager
 from src.authorization.manager import AuthorizationManager
 from src.subscription.manager import SubscriptionManager
 from src.logging_system.manager import LogManager
+from src.templating.manager import TemplatingManager
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -35,6 +36,8 @@ def main():
     log_manager = LogManager()
     logger = log_manager.get_logger()
     logger.info("Application started.")
+
+    templating_manager = TemplatingManager(logger)
 
     # REMOVING THIS CODE temporarily for development purposes
     # if args.mode == "dev":
