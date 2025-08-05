@@ -9,46 +9,7 @@ import json # For storing features and limits as JSON strings
 import secrets # For generating secure tokens
 
 # Entity definitions for the subscription module
-subscription_entity_definitions = {
-    "limits": {
-        "key": "TEXT NOT NULL UNIQUE",
-        "name": "TEXT NOT NULL",
-        "description": "TEXT",
-        "default_value": "TEXT" # Stored as JSON string
-    },
-    "features": {
-        "key": "TEXT NOT NULL UNIQUE",
-        "name": "TEXT NOT NULL",
-        "description": "TEXT",
-        "permissions": "TEXT" # Stored as JSON string (list of permission keys)
-    },
-    "tiers": {
-        "key": "TEXT NOT NULL UNIQUE",
-        "status": "TEXT NOT NULL",
-        "name": "TEXT NOT NULL",
-        "description": "TEXT",
-        "monthly_cost": "REAL NOT NULL",
-        "yearly_cost": "REAL NOT NULL",
-        "stripe_product_id": "TEXT",
-        "features": "TEXT", # Stored as JSON string (list of feature keys)
-        "limits": "TEXT", # Stored as JSON string (dict of limit_key: value)
-        "created_at": "TEXT DEFAULT CURRENT_TIMESTAMP",
-        "updated_at": "TEXT DEFAULT CURRENT_TIMESTAMP"
-    },
-    "subscriptions": {
-        "account_id": "INTEGER NOT NULL",
-        "tier_id": "INTEGER NOT NULL",
-        "stripe_subscription_id": "TEXT NOT NULL UNIQUE",
-        "status": "TEXT NOT NULL",
-        "current_period_start": "TEXT NOT NULL",
-        "current_period_end": "TEXT NOT NULL",
-        "cancel_at_period_end": "INTEGER NOT NULL", # SQLite stores booleans as 0 or 1
-        "created_at": "TEXT DEFAULT CURRENT_TIMESTAMP",
-        "updated_at": "TEXT DEFAULT CURRENT_TIMESTAMP",
-        "FOREIGN KEY(account_id)": "REFERENCES accounts(id)",
-        "FOREIGN KEY(tier_id)": "REFERENCES tiers(id)"
-    }
-}
+
 
 # Permissions exposed by the subscription module
 MODULE_PERMISSIONS = [
@@ -80,7 +41,7 @@ class SubscriptionManager:
         self.datastore = datastore_manager
         self.payment_gateway = payment_gateway_manager
         self.multi_tenant_manager = multi_tenant_manager # Store multi_tenant_manager
-        self.datastore.register_entity_definitions(subscription_entity_definitions)
+        self.datastore.register_dataclass_models([Limit, Feature, Tier, Subscription])
         self.limits_dao = self.datastore.get_dao("limits")
         self.features_dao = self.datastore.get_dao("features")
         self.tiers_dao = self.datastore.get_dao("tiers")
@@ -111,46 +72,48 @@ class SubscriptionManager:
 
     # --- Tier/Feature/Limit Management ---
     def create_limit(self, key: str, name: str, description: str, default_value: Any) -> Limit:
-        limit_id = self.limits_dao.insert({
+        limit_data = {
             "key": key,
             "name": name,
             "description": description,
             "default_value": json.dumps(default_value)
-        })
-        return self.get_limit_by_id(limit_id)
+        }
+        hash_id = self.datastore.insert("limits", limit_data)
+        return self.get_limit_by_id(hash_id)
 
     def get_limit_by_id(self, limit_id: str) -> Limit | None:
-        limit_data = self.limits_dao.get_by_id(limit_id)
+        limit_data = self.datastore.get_by_id("limits", limit_id)
         if limit_data:
             limit_data['default_value'] = json.loads(limit_data['default_value'])
             return Limit(**limit_data)
         return None
 
     def get_limit_by_key(self, key: str) -> Limit | None:
-        limit_data = self.limits_dao.find_one_by_column("key", key)
+        limit_data = self.datastore.find_one_by_column("limits", "key", key)
         if limit_data:
             limit_data['default_value'] = json.loads(limit_data['default_value'])
             return Limit(**limit_data)
         return None
 
     def create_feature(self, key: str, name: str, description: str, permissions: List[str]) -> Feature:
-        feature_id = self.features_dao.insert({
+        feature_data = {
             "key": key,
             "name": name,
             "description": description,
             "permissions": json.dumps(permissions)
-        })
-        return self.get_feature_by_id(feature_id)
+        }
+        hash_id = self.datastore.insert("features", feature_data)
+        return self.get_feature_by_id(hash_id)
 
     def get_feature_by_id(self, feature_id: str) -> Feature | None:
-        feature_data = self.features_dao.get_by_id(feature_id)
+        feature_data = self.datastore.get_by_id("features", feature_id)
         if feature_data:
             feature_data['permissions'] = json.loads(feature_data['permissions'])
             return Feature(**feature_data)
         return None
 
     def get_feature_by_key(self, key: str) -> Feature | None:
-        feature_data = self.features_dao.find_one_by_column("key", key)
+        feature_data = self.datastore.find_one_by_column("features", "key", key)
         if feature_data:
             feature_data['permissions'] = json.loads(feature_data['permissions'])
             return Feature(**feature_data)
@@ -178,7 +141,7 @@ class SubscriptionManager:
             product = self.payment_gateway.stripe.create_product(name, description)
             stripe_product_id = product['id']
 
-        tier_id = self.tiers_dao.insert({
+        hash_id = self.datastore.insert("tiers", {
             "key": key,
             "status": status,
             "name": name,
@@ -189,10 +152,10 @@ class SubscriptionManager:
             "features": json.dumps(features),
             "limits": json.dumps(limits)
         })
-        return self.get_tier_by_id(tier_id)
+        return self.get_tier_by_id(hash_id)
 
     def get_tier_by_id(self, tier_id: str) -> Tier | None:
-        tier_data = self.tiers_dao.get_by_id(tier_id)
+        tier_data = self.datastore.get_by_id("tiers", tier_id)
         if tier_data:
             tier_data['features'] = json.loads(tier_data['features'])
             tier_data['limits'] = json.loads(tier_data['limits'])
@@ -202,7 +165,7 @@ class SubscriptionManager:
         return None
 
     def get_tier_by_key(self, key: str) -> Tier | None:
-        tier_data = self.tiers_dao.find_one_by_column("key", key)
+        tier_data = self.datastore.find_one_by_column("tiers", "key", key)
         if tier_data:
             tier_data['features'] = json.loads(tier_data['features'])
             tier_data['limits'] = json.loads(tier_data['limits'])
@@ -223,12 +186,15 @@ class SubscriptionManager:
                 update_data[key] = value
         
         update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
-        self.tiers_dao.update(tier_id, update_data)
+        self.datastore.update("tiers", tier_id, update_data)
         return self.get_tier_by_id(tier_id)
 
     def deactivate_tier(self, tier_id: str) -> Tier | None:
         # Check if there are any active subscriptions for this tier
-        active_subscriptions = self.subscriptions_dao.find_by_column("tier_id", self.datastore._decode_id(tier_id))
+        # Need to get all subscriptions and filter by tier_id (hash_id)
+        all_subscriptions = self.datastore.get_all("subscriptions")
+        active_subscriptions = [sub for sub in all_subscriptions if sub.get('tier_id') == tier_id and sub.get('status') == 'active']
+
         if active_subscriptions:
             raise ValueError("Cannot deactivate tier with active subscriptions.")
         return self.update_tier(tier_id, status="deactivated")
@@ -242,7 +208,7 @@ class SubscriptionManager:
             raise ValueError(f"Tier with ID {tier_id} not found.")
         if tier.status != "deactivated":
             raise ValueError(f"Tier with ID {tier_id} must be deactivated before deletion.")
-        self.tiers_dao.delete(tier_id)
+        self.datastore.delete("tiers", tier_id)
 
     # --- Subscription Management ---
     def create_subscription(
@@ -255,50 +221,38 @@ class SubscriptionManager:
         current_period_end: datetime,
         cancel_at_period_end: bool
     ) -> Subscription:
-        int_account_id = self.datastore._decode_id(account_id)
-        if int_account_id is None:
-            raise ValueError("Invalid account ID provided.")
-
-        int_tier_id = self.datastore._decode_id(tier_id)
-        if int_tier_id is None:
-            raise ValueError("Invalid tier ID provided.")
-
-        subscription_id = self.subscriptions_dao.insert({
-            "account_id": int_account_id,
-            "tier_id": int_tier_id,
+        subscription_data = {
+            "account_id": int(account_id),
+            "tier_id": int(tier_id),
             "stripe_subscription_id": stripe_subscription_id,
             "status": status,
             "current_period_start": self._convert_datetime_to_isoformat(current_period_start),
             "current_period_end": self._convert_datetime_to_isoformat(current_period_end),
             "cancel_at_period_end": 1 if cancel_at_period_end else 0
-        })
-        return self.get_subscription_by_id(subscription_id)
+        }
+        hash_id = self.datastore.insert("subscriptions", subscription_data)
+        return self.get_subscription_by_id(hash_id)
 
-    def get_subscription_by_id(self, subscription_id: str) -> Subscription | None:
-        sub_data = self.subscriptions_dao.get_by_id(subscription_id)
+    def get_subscription_by_id(self, subscription_id: int) -> Subscription | None:
+        sub_data = self.datastore.get_by_id("subscriptions", subscription_id)
         if sub_data:
-            sub_data['account_id'] = self.datastore._encode_id(sub_data['account_id'])
-            sub_data['tier_id'] = self.datastore._encode_id(sub_data['tier_id'])
             sub_data['current_period_start'] = self._convert_timestamp_to_datetime(sub_data['current_period_start'])
             sub_data['current_period_end'] = self._convert_timestamp_to_datetime(sub_data['current_period_end'])
             sub_data['created_at'] = self._convert_timestamp_to_datetime(sub_data.get('created_at'))
             sub_data['updated_at'] = self._convert_timestamp_to_datetime(sub_data.get('updated_at'))
             sub_data['cancel_at_period_end'] = bool(sub_data['cancel_at_period_end'])
-            return Subscription(**sub_data)
+            return Subscription(id=sub_data['id'], account_id=sub_data['account_id'], tier_id=sub_data['tier_id'], stripe_subscription_id=sub_data['stripe_subscription_id'], status=sub_data['status'], current_period_start=sub_data['current_period_start'], current_period_end=sub_data['current_period_end'], cancel_at_period_end=sub_data['cancel_at_period_end'], created_at=sub_data['created_at'], updated_at=sub_data['updated_at'])
         return None
 
     def get_subscription_by_stripe_id(self, stripe_subscription_id: str) -> Subscription | None:
-        all_subs = self.subscriptions_dao.get_all()
-        for sub_data in all_subs:
-            if sub_data['stripe_subscription_id'] == stripe_subscription_id:
-                sub_data['account_id'] = self.datastore._encode_id(sub_data['account_id'])
-                sub_data['tier_id'] = self.datastore._encode_id(sub_data['tier_id'])
-                sub_data['current_period_start'] = self._convert_timestamp_to_datetime(sub_data['current_period_start'])
-                sub_data['current_period_end'] = self._convert_timestamp_to_datetime(sub_data['current_period_end'])
-                sub_data['created_at'] = self._convert_timestamp_to_datetime(sub_data.get('created_at'))
-                sub_data['updated_at'] = self._convert_timestamp_to_datetime(sub_data.get('updated_at'))
-                sub_data['cancel_at_period_end'] = bool(sub_data['cancel_at_period_end'])
-                return Subscription(**sub_data)
+        sub_data = self.datastore.find_one_by_column("subscriptions", "stripe_subscription_id", stripe_subscription_id)
+        if sub_data:
+            sub_data['current_period_start'] = self._convert_timestamp_to_datetime(sub_data['current_period_start'])
+            sub_data['current_period_end'] = self._convert_timestamp_to_datetime(sub_data['current_period_end'])
+            sub_data['created_at'] = self._convert_timestamp_to_datetime(sub_data.get('created_at'))
+            sub_data['updated_at'] = self._convert_timestamp_to_datetime(sub_data.get('updated_at'))
+            sub_data['cancel_at_period_end'] = bool(sub_data['cancel_at_period_end'])
+            return Subscription(id=sub_data['id'], account_id=sub_data['account_id'], tier_id=sub_data['tier_id'], stripe_subscription_id=sub_data['stripe_subscription_id'], status=sub_data['status'], current_period_start=sub_data['current_period_start'], current_period_end=sub_data['current_period_end'], cancel_at_period_end=sub_data['cancel_at_period_end'], created_at=sub_data['created_at'], updated_at=sub_data['updated_at'])
         return None
 
     def update_subscription(self, subscription_id: str, **kwargs) -> Subscription | None:
@@ -315,7 +269,7 @@ class SubscriptionManager:
                 update_data[key] = value
         
         update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
-        self.subscriptions_dao.update(subscription_id, update_data)
+        self.datastore.update("subscriptions", subscription_id, update_data)
         return self.get_subscription_by_id(subscription_id)
 
     def handle_stripe_webhook(self, event_payload: dict) -> dict | None:
@@ -338,7 +292,7 @@ class SubscriptionManager:
             # Get tier based on Stripe product ID
             stripe_product_id = stripe_subscription['items']['data'][0]['price']['product']
             tier = None
-            all_tiers = self.tiers_dao.get_all()
+            all_tiers = self.datastore.get_all("tiers")
             for t_data in all_tiers:
                 if t_data['stripe_product_id'] == stripe_product_id:
                     tier = self.get_tier_by_id(t_data['id'])
@@ -346,7 +300,7 @@ class SubscriptionManager:
             
             if not tier:
                 print(f"Debug: Stripe product ID from webhook: {stripe_product_id}")
-                all_tiers_debug = self.tiers_dao.get_all()
+                all_tiers_debug = self.datastore.get_all("tiers")
                 for t_data_debug in all_tiers_debug:
                     print(f"Debug: Tier in DB: {t_data_debug.get('key')}, Stripe Product ID: {t_data_debug.get('stripe_product_id')}")
                 print(f"Error: Tier not found for Stripe product ID {stripe_product_id}.")

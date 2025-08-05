@@ -6,6 +6,20 @@ from src.multi_tenant.manager import MultiTenantManager
 from src.payment_gateway.manager import PaymentGatewayManager
 from src.authorization.manager import AuthorizationManager
 from src.subscription.manager import SubscriptionManager
+from dataclasses import dataclass, field
+from typing import Optional
+
+@dataclass
+class User:
+    id: Optional[str]
+    name: str
+    email: str
+
+@dataclass
+class Product:
+    id: Optional[str]
+    product_name: str
+    price: float
 
 def main():
     load_dotenv() # Load environment variables from .env file
@@ -22,18 +36,8 @@ def main():
 
     if args.mode == "dev":
         print("Running in development mode.")
-        # Placeholder for entity definitions from external library discovery
-        example_entity_definitions = {
-            "users": {
-                "name": "TEXT NOT NULL",
-                "email": "TEXT UNIQUE NOT NULL"
-            },
-            "products": {
-                "product_name": "TEXT NOT NULL",
-                "price": "REAL"
-            }
-        }
-        datastore_manager = DatastoreManager(example_entity_definitions)
+        # Initialize DatastoreManager with models
+        datastore_manager = DatastoreManager([User, Product])
         multi_tenant_manager = MultiTenantManager(datastore_manager, authorization_manager)
         payment_gateway_manager = PaymentGatewayManager()
         authorization_manager = AuthorizationManager()

@@ -4,7 +4,8 @@ from datetime import datetime
 
 @dataclass
 class Limit:
-    id: str
+    id: int
+    
     key: str
     name: str
     description: str
@@ -12,7 +13,8 @@ class Limit:
 
 @dataclass
 class Feature:
-    id: str
+    id: int
+    
     key: str
     name: str
     description: str
@@ -20,7 +22,8 @@ class Feature:
 
 @dataclass
 class Tier:
-    id: str
+    id: int
+    
     key: str
     status: str # active:public, active:private, draft, deactivated
     name: str
@@ -35,7 +38,8 @@ class Tier:
 
 @dataclass
 class Subscription:
-    id: str
+    id: int
+    
     account_id: str
     tier_id: str
     stripe_subscription_id: str

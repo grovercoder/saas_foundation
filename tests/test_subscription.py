@@ -8,13 +8,14 @@ from src.datastore.manager import DatastoreManager
 from src.datastore.database import get_db_connection, execute_query
 from src.authorization.manager import AuthorizationManager
 from src.payment_gateway.manager import PaymentGatewayManager
-from src.subscription.manager import SubscriptionManager, subscription_entity_definitions, MODULE_PERMISSIONS
+from src.subscription.manager import SubscriptionManager, MODULE_PERMISSIONS
 from src.subscription.models import Limit, Feature, Tier, Subscription
 
 # Use an in-memory database for testing
 @pytest.fixture(scope="function")
 def db_connection():
     original_db_url = os.getenv("DATABASE_URL")
+
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
     conn = get_db_connection()
@@ -26,6 +27,8 @@ def db_connection():
     else:
         del os.environ["DATABASE_URL"]
 
+    
+
 @pytest.fixture(scope="function")
 def setup_subscription_db(db_connection):
     # Ensure tables are clean before each test
@@ -34,7 +37,7 @@ def setup_subscription_db(db_connection):
     execute_query("DROP TABLE IF EXISTS features")
     execute_query("DROP TABLE IF EXISTS limits")
 
-    datastore_manager = DatastoreManager(subscription_entity_definitions)
+    datastore_manager = DatastoreManager([Limit, Feature, Tier, Subscription])
     yield datastore_manager
 
 @pytest.fixture(scope="function")
@@ -211,7 +214,7 @@ def test_create_subscription_and_webhook_handling(subscription_manager, multi_te
     assert subscription is not None
     assert subscription.stripe_subscription_id == 'sub_test_123'
     assert subscription.status == 'active'
-    assert subscription.tier_id == tier.id
+    assert int(subscription.tier_id) == tier.id
     assert subscription.account_id is not None
 
     # Verify that an account and user were created

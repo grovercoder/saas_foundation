@@ -1,17 +1,31 @@
 import pytest
 import os
 import sqlite3
-from hashids import Hashids # Added import for Hashids
 from src.datastore.database import get_db_connection, execute_query, fetch_one, fetch_all
 from src.datastore.schema import create_tables_from_entity_definitions
-from src.datastore.dao import BaseDAO, hashids # Import hashids directly for testing encoding/decoding
+from src.datastore.dao import BaseDAO
 from src.datastore.manager import DatastoreManager # Added import for DatastoreManager
+from dataclasses import dataclass, field
+from typing import Optional
+
+@dataclass
+class TestUser:
+    id: int
+    name: str
+    email: str
+
+@dataclass
+class TestProduct:
+    id: int
+    product_name: str
+    price: float
 
 # Use an in-memory database for testing
 @pytest.fixture(scope="function")
 def db_connection():
     # Temporarily set DATABASE_URL to an in-memory database
     original_db_url = os.getenv("DATABASE_URL")
+
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
     conn = get_db_connection()
@@ -24,23 +38,20 @@ def db_connection():
     else:
         del os.environ["DATABASE_URL"]
 
-@pytest.fixture(scope="function")
-def setup_db(db_connection):
-    # Define a simple entity for testing
-    entity_definitions = {
-        "test_users": {
-            "name": "TEXT NOT NULL",
-            "email": "TEXT UNIQUE NOT NULL"
-        }
-    }
-    # Ensure table is clean before each test
-    execute_query("DROP TABLE IF EXISTS test_users") # Added: Drop table before creation
-    create_tables_from_entity_definitions(entity_definitions)
-    yield
+
 
 @pytest.fixture(scope="function")
-def user_dao():
-    return BaseDAO("test_users")
+def datastore_manager(datastore_manager_with_models):
+    return datastore_manager_with_models
+
+@pytest.fixture(scope="function")
+def datastore_manager_with_models(db_connection):
+    # Ensure tables are clean before each test
+    execute_query("DROP TABLE IF EXISTS testusers")
+    execute_query("DROP TABLE IF EXISTS testproducts")
+    # Initialize DatastoreManager with models
+    manager = DatastoreManager([TestUser, TestProduct])
+    return manager
 
 
 def test_db_connection(db_connection):
@@ -48,128 +59,107 @@ def test_db_connection(db_connection):
     assert isinstance(db_connection, sqlite3.Connection)
 
 
-def test_create_tables(setup_db, db_connection):
+def test_create_tables(datastore_manager_with_models, db_connection):
     cursor = db_connection.cursor()
-    cursor.execute("PRAGMA table_info(test_users)")
+    cursor.execute("PRAGMA table_info(testusers)")
     columns = [col[1] for col in cursor.fetchall()]
     assert "id" in columns
     assert "name" in columns
     assert "email" in columns
 
 
-def test_insert_and_get_user(setup_db, user_dao):
+def test_insert_and_get_user(datastore_manager_with_models):
     user_data = {"name": "Test User", "email": "test@example.com"}
-    hash_id = user_dao.insert(user_data)
-    assert hash_id is not None
-    assert isinstance(hash_id, str) # Should be a hashid string
+    int_id = datastore_manager_with_models.insert("testusers", user_data)
+    assert int_id is not None
+    assert isinstance(int_id, int) # Should be an integer ID
 
-    retrieved_user = user_dao.get_by_id(hash_id)
+    retrieved_user = datastore_manager_with_models.get_by_id("testusers", int_id)
     assert retrieved_user is not None
     assert retrieved_user["name"] == "Test User"
     assert retrieved_user["email"] == "test@example.com"
-    assert retrieved_user["id"] == hash_id # ID should be the hashid
+    assert retrieved_user["id"] == int_id # ID should be the integer ID
 
 
-def test_get_all_users(setup_db, user_dao):
-    user_dao.insert({"name": "User 1", "email": "user1@example.com"})
-    user_dao.insert({"name": "User 2", "email": "user2@example.com"})
+def test_get_all_users(datastore_manager_with_models):
+    datastore_manager_with_models.insert("testusers", {"name": "User 1", "email": "user1@example.com"})
+    datastore_manager_with_models.insert("testusers", {"name": "User 2", "email": "user2@example.com"})
 
-    users = user_dao.get_all()
+    users = datastore_manager_with_models.get_all("testusers")
     assert len(users) == 2
-    assert all(isinstance(user["id"], str) for user in users) # All IDs should be hashids
+    assert all(isinstance(user["id"], int) for user in users) # All IDs should be integer IDs
 
 
-def test_update_user(setup_db, user_dao):
-    hash_id = user_dao.insert({"name": "Old Name", "email": "old@example.com"})
-    user_dao.update(hash_id, {"name": "New Name"})
+def test_update_user(datastore_manager_with_models):
+    int_id = datastore_manager_with_models.insert("testusers", {"name": "Old Name", "email": "old@example.com"})
+    datastore_manager_with_models.update("testusers", int_id, {"name": "New Name"})
 
-    updated_user = user_dao.get_by_id(hash_id)
+    updated_user = datastore_manager_with_models.get_by_id("testusers", int_id)
     assert updated_user["name"] == "New Name"
     assert updated_user["email"] == "old@example.com"
 
 
-def test_delete_user(setup_db, user_dao):
-    hash_id = user_dao.insert({"name": "Delete Me", "email": "delete@example.com"})
-    user_dao.delete(hash_id)
+def test_delete_user(datastore_manager_with_models):
+    int_id = datastore_manager_with_models.insert("testusers", {"name": "Delete Me", "email": "delete@example.com"})
+    datastore_manager_with_models.delete("testusers", int_id)
 
-    deleted_user = user_dao.get_by_id(hash_id)
+    deleted_user = datastore_manager_with_models.get_by_id("testusers", int_id)
     assert deleted_user is None
 
 
-def test_datastore_manager_initialization(setup_db):
-    entity_definitions = {
-        "manager_users": {
-            "name": "TEXT NOT NULL",
-            "email": "TEXT UNIQUE NOT NULL"
-        },
-        "manager_products": {
-            "product_name": "TEXT NOT NULL",
-            "price": "REAL"
-        }
-    }
-    manager = DatastoreManager(entity_definitions)
-
-    assert manager.get_dao("manager_users") is not None
-    assert isinstance(manager.get_dao("manager_users"), BaseDAO)
-    assert manager.get_dao("manager_products") is not None
+def test_datastore_manager_initialization():
+    manager = DatastoreManager([TestUser, TestProduct])
+    assert manager.get_dao("testusers") is not None
+    assert isinstance(manager.get_dao("testusers"), BaseDAO)
+    assert manager.get_dao("testproducts") is not None
 
     # Test that tables are created
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("PRAGMA table_info(manager_users)")
+    cursor.execute("PRAGMA table_info(testusers)")
     assert len(cursor.fetchall()) > 0
-    cursor.execute("PRAGMA table_info(manager_products)")
+    cursor.execute("PRAGMA table_info(testproducts)")
     assert len(cursor.fetchall()) > 0
     conn.close()
 
 
-def test_datastore_manager_register_entities(setup_db):
-    initial_entities = {"initial_entity": {"field1": "TEXT"}}
-    manager = DatastoreManager(initial_entities)
-    assert manager.get_dao("initial_entity") is not None
+def test_datastore_manager_register_entities(datastore_manager_with_models):
+    manager = datastore_manager_with_models
+    
+    @dataclass
+    class NewEntity1:
+        id: int
+        hash_id: str
+        name: str
+    
+    @dataclass
+    class NewEntity2:
+        id: int
+        hash_id: str
+        value: int
 
-    new_entities = {
-        "new_entity_1": {"name": "TEXT"},
-        "new_entity_2": {"value": "INTEGER"}
-    }
-    manager.register_entity_definitions(new_entities)
+    manager.register_dataclass_models([NewEntity1, NewEntity2])
 
-    assert manager.get_dao("new_entity_1") is not None
-    assert manager.get_dao("new_entity_2") is not None
+    assert manager.get_dao("newentity1s") is not None
+    assert manager.get_dao("newentity2s") is not None
 
     # Verify tables are created
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("PRAGMA table_info(new_entity_1)")
+    cursor.execute("PRAGMA table_info(newentity1s)")
     assert len(cursor.fetchall()) > 0
-    cursor.execute("PRAGMA table_info(new_entity_2)")
+    cursor.execute("PRAGMA table_info(newentity2s)")
     assert len(cursor.fetchall()) > 0
     conn.close()
 
 
-def test_datastore_manager_get_dao_invalid_entity(setup_db):
-    entity_definitions = {"some_entity": {"name": "TEXT"}}
-    manager = DatastoreManager(entity_definitions)
+def test_datastore_manager_get_dao_invalid_entity(datastore_manager_with_models):
+    manager = datastore_manager_with_models
     with pytest.raises(ValueError, match="DAO for entity 'non_existent_entity' not found."):
         manager.get_dao("non_existent_entity")
 
 
-def test_hashid_encoding_decoding():
-    # Test direct hashids encoding/decoding
-    original_id = 123
-    encoded_id = hashids.encode(original_id)
-    decoded_id = hashids.decode(encoded_id)
-    assert decoded_id[0] == original_id
-
-    # Test with a different salt (should produce different hash)
-    temp_hashids = Hashids(salt="another_salt", min_length=8)
-    another_encoded_id = temp_hashids.encode(original_id)
-    assert encoded_id != another_encoded_id
 
 
-def test_insert_invalid_hashid(setup_db, user_dao):
-    with pytest.raises(ValueError, match="Invalid hash ID provided for update."):
-        user_dao.update("invalid_hash", {"name": "Should Fail"})
 
-    with pytest.raises(ValueError, match="Invalid hash ID provided for delete."):
-        user_dao.delete("invalid_hash")
+

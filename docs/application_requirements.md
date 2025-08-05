@@ -31,7 +31,7 @@ The application will include the following internal modules to provide core func
     *   It must use **SQLite3** for all database operations.
     *   It will **not** use an Object-Relational Mapper (ORM), relying on direct database queries.
     *   It will retrieve database credentials and settings from environment variables, which will be loaded from a .env file.
-    *   All exposed ID values from the datastore will be obfuscated using **HASHIDs**.
+    *   All exposed ID values from the datastore will be obfuscated.
 *   **Multi-tenant Management:** This system will handle the management of accounts, account users, and their associated roles. Users must belong to an existing account. User records will include a username, a hashed password (never plain text), a reset token, and the timestamp the token was created. This module will also define and register its own specific permissions with the Authorization System.
 *   **Payment Gateway Wrapper:** A module that provides a consistent interface for interacting with various payment gateways. It will include a **Stripe adapter** that utilizes the Stripe API and provides a method to handle webhook events.
 *   **Subscription Management:** This system will handle the setup and management of user subscriptions. It consists of two main parts:

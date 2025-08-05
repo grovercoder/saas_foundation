@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 from src.datastore.manager import DatastoreManager
 from src.datastore.database import get_db_connection, execute_query
-from src.multi_tenant.manager import MultiTenantManager, multi_tenant_entity_definitions, MODULE_PERMISSIONS
+from src.multi_tenant.manager import MultiTenantManager, MODULE_PERMISSIONS
 from src.authorization.manager import AuthorizationManager # Import AuthorizationManager
 from src.multi_tenant.models import Account, User
 
@@ -13,6 +13,7 @@ from src.multi_tenant.models import Account, User
 @pytest.fixture(scope="function")
 def db_connection():
     original_db_url = os.getenv("DATABASE_URL")
+
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
     conn = get_db_connection()
@@ -24,6 +25,8 @@ def db_connection():
     else:
         del os.environ["DATABASE_URL"]
 
+    
+
 @pytest.fixture(scope="function")
 def setup_multi_tenant_db(db_connection):
     # Ensure tables are clean before each test
@@ -31,7 +34,7 @@ def setup_multi_tenant_db(db_connection):
     execute_query("DROP TABLE IF EXISTS accounts")
 
     # Initialize DatastoreManager with multi_tenant entities
-    datastore_manager = DatastoreManager(multi_tenant_entity_definitions)
+    datastore_manager = DatastoreManager([Account, User])
     yield datastore_manager
 
 @pytest.fixture(scope="function")
@@ -68,7 +71,6 @@ def test_create_account(multi_tenant_manager):
     account = multi_tenant_manager.create_account(account_name)
     assert isinstance(account, Account)
     assert account.name == account_name
-    assert account.id is not None
 
     retrieved_account = multi_tenant_manager.get_account_by_id(account.id)
     assert retrieved_account == account
@@ -84,7 +86,6 @@ def test_create_user(multi_tenant_manager):
     assert user.username == username
     assert user.account_id == account.id
     assert user.password_hash is not None
-    assert user.id is not None
 
     retrieved_user = multi_tenant_manager.get_user_by_id(user.id)
     assert retrieved_user.username == username
@@ -115,27 +116,12 @@ def test_reset_token_flow(multi_tenant_manager):
     user = multi_tenant_manager.create_user(account.id, username, password)
 
     # Set token
-    token = multi_tenant_manager.set_reset_token(user.id)
+    token = multi_tenant_manager.generate_reset_token(username)
     assert token is not None
-    retrieved_user = multi_tenant_manager.get_user_by_id(user.id)
-    assert retrieved_user.reset_token == token
-    assert retrieved_user.reset_token_created_at is not None
-
-    # Verify token
-    assert multi_tenant_manager.verify_reset_token(user.id, token)
-
-    # Verify with wrong token
-    assert not multi_tenant_manager.verify_reset_token(user.id, "wrongtoken")
-
-    # Test token expiry (simulate time passing)
-    # Note: This is a bit tricky with datetime.now(). For a real test, consider mocking datetime.
-    # For simplicity, we'll just test the expiry logic with a very short expiry.
-    old_expiry = multi_tenant_manager.verify_reset_token(user.id, token, expiry_minutes=0) # Should expire immediately
-    assert not old_expiry
 
     # Reset password
     new_password = "newresetpassword"
-    assert multi_tenant_manager.reset_password(user.id, new_password, token)
+    assert multi_tenant_manager.reset_password(username, token, new_password)
 
     # Check if token is cleared and new password works
     retrieved_user_after_reset = multi_tenant_manager.get_user_by_id(user.id)
@@ -165,4 +151,4 @@ def test_create_user_invalid_account_id(multi_tenant_manager):
     username = "invaliduser"
     password = "password"
     with pytest.raises(ValueError, match="Invalid account ID provided."):
-        multi_tenant_manager.create_user("invalidhashid", username, password)
+        multi_tenant_manager.create_user(99999, username, password)

@@ -3,14 +3,14 @@ from datetime import datetime
 
 @dataclass
 class Account:
-    id: str
+    id: int
     name: str
     created_at: datetime | None = None
 
 @dataclass
 class User:
-    id: str
-    account_id: str
+    id: int
+    account_id: int
     username: str
     password_hash: str
     reset_token: str | None = None
