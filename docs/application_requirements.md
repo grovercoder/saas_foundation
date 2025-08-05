@@ -54,8 +54,7 @@ The application will include the following internal modules to provide core func
         *   An account and a default user are created (if they don't already exist), and the account is linked to the subscription record, which also indicates the associated tier.
 *   **Authorization System:** A system responsible for managing user permissions and access control to various parts of the application, utilizing a **hybrid role-based access control list (RBAC) system**. It provides a mechanism for other modules to register their exposed permissions.
 *   **Templating System:** A module for generating dynamic content, primarily for the presentation layer.
-*   **Dynamic Form Definitions:** A package for defining and rendering dynamic forms, based on the **Form.io JavaScript SDK** (not a hosted or API-based solution).
-*   **Workflow Management Library:** A business process management (BPM) style library for defining and executing multi-step workflows. Each step will have its own trigger and action, with actions including things like "calculate," "notify," and "email."
+
 *   **Email Services:** A custom library that provides SMTP services for sending and managing outgoing emails.
 *   **Web Service:** The central entry point for the application's presentation layer, providing an API or web interface.
 
