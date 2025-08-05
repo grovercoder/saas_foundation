@@ -15,8 +15,8 @@ This application will serve as a central orchestration layer, acting as a "comma
 ### **Functional Requirements**
 
 * **Library Management:** The system must provide a way to **add, remove, and update** external libraries dynamically without requiring a full application redeploy.  
-* **Capability Discovery:** Upon importing a new library, the application must be able to **discover and register** the specific functions or "capabilities" it provides.  
-  * **Entity Definition Discovery:** External libraries must be able to register their entity definitions (e.g., required database tables and fields) with the **Datastore Module**. The Datastore Module will use this information to automatically create the necessary database tables and generate corresponding Data Access Objects (DAOs) for use by the orchestrator.  
+* **Capability Registration:** Instead of dynamic discovery, external libraries will explicitly **register** their specific functions, permissions, and capabilities with the appropriate manager objects during their initialization. This ensures a clear and controlled integration process.
+  * **Entity Definition Registration:** External libraries must register their entity definitions (e.g., required database tables and fields) with the **Datastore Module** during initialization. The Datastore Module will use this information to automatically create the necessary database tables and generate corresponding Data Access Objects (DAOs) for use by the orchestrator.  
 * **Workflow Definition:** Users must be able to define and configure **multi-step workflows** that chain together capabilities from different external libraries.  
 * **Execution Engine:** The application must have a robust engine for executing these workflows, handling the sequence of calls to external libraries and managing the flow of data between them.  
 * **Configuration:** The system should allow for easy configuration of each external library, such as API keys, endpoints, and specific parameters required for its operation.  
