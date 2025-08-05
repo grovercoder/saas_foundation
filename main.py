@@ -7,6 +7,7 @@ from src.authorization.manager import AuthorizationManager
 from src.subscription.manager import SubscriptionManager
 from src.logging_system.manager import LogManager
 from src.templating.manager import TemplatingManager
+from src.email_services.manager import EmailManager
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -38,6 +39,7 @@ def main():
     logger.info("Application started.")
 
     templating_manager = TemplatingManager(logger)
+    email_manager = EmailManager(logger, templating_manager)
 
     # REMOVING THIS CODE temporarily for development purposes
     # if args.mode == "dev":

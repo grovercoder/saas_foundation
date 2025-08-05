@@ -63,7 +63,11 @@ The application will include the following internal modules to provide core func
         *   This `CombinedLoader` should include their own `FileSystemLoader` (configured for their application-specific templates directory) and a `PackageLoader` configured to load templates from this foundational templating system.
         *   This setup allows child applications to easily override default templates provided by the foundation without modifying the original template files.
 
-*   **Email Services:** A custom library that provides SMTP services for sending and managing outgoing emails.
+*   **Email Services:**
+    *   A custom library that provides SMTP services for sending and managing outgoing emails.
+    *   It supports sending both HTML and plain text versions of email bodies.
+    *   Email bodies can be defined using templates (leveraging the Templating System) or provided directly as string content.
+    *   It loads SMTP connection properties (server, port, username, password, TLS settings, sender email) from environment variables.
 *   **Web Service:** The central entry point for the application's presentation layer, providing an API or web interface.
 
 ### **Presentation Layer**
