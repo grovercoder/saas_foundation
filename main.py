@@ -5,6 +5,7 @@ from src.multi_tenant.manager import MultiTenantManager
 from src.payment_gateway.manager import PaymentGatewayManager
 from src.authorization.manager import AuthorizationManager
 from src.subscription.manager import SubscriptionManager
+from src.logging_system.manager import LogManager
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -31,7 +32,9 @@ def main():
 
     args = parser.parse_args()
 
-    
+    log_manager = LogManager()
+    logger = log_manager.get_logger()
+    logger.info("Application started.")
 
     # REMOVING THIS CODE temporarily for development purposes
     # if args.mode == "dev":
@@ -54,7 +57,7 @@ def main():
 
     print("Running in development mode.")
     # Initialize DatastoreManager with models
-    datastore_manager = DatastoreManager([User, Product])
+    datastore_manager = DatastoreManager(logger, [User, Product])
 
     # Ensure tables are clean before each run in dev mode
     datastore_manager.execute_query("DROP TABLE IF EXISTS users")
@@ -64,10 +67,10 @@ def main():
     datastore_manager.execute_query("DROP TABLE IF EXISTS tiers")
     datastore_manager.execute_query("DROP TABLE IF EXISTS subscriptions")
 
-    authorization_manager = AuthorizationManager()
-    payment_gateway_manager = PaymentGatewayManager()
-    multi_tenant_manager = MultiTenantManager(datastore_manager, authorization_manager)
-    subscription_manager = SubscriptionManager(datastore_manager, payment_gateway_manager, authorization_manager)
+    authorization_manager = AuthorizationManager(logger)
+    payment_gateway_manager = PaymentGatewayManager(logger)
+    multi_tenant_manager = MultiTenantManager(logger, datastore_manager, authorization_manager)
+    subscription_manager = SubscriptionManager(logger, datastore_manager, payment_gateway_manager, authorization_manager)
 
 if __name__ == "__main__":
     main()

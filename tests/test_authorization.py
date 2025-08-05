@@ -1,9 +1,11 @@
 import pytest
+from unittest.mock import Mock
 from src.authorization.manager import AuthorizationManager
 
 @pytest.fixture
 def auth_manager():
-    return AuthorizationManager()
+    mock_logger = Mock()
+    return AuthorizationManager(mock_logger)
 
 def test_register_permissions_success(auth_manager):
     permissions = [

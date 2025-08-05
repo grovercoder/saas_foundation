@@ -1,7 +1,7 @@
 import pytest
 import os
 import sqlite3
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 from datetime import datetime, timedelta, timezone
 
 from src.datastore.manager import DatastoreManager
@@ -11,16 +11,20 @@ from src.payment_gateway.manager import PaymentGatewayManager
 from src.subscription.manager import SubscriptionManager, MODULE_PERMISSIONS
 from src.subscription.models import Limit, Feature, Tier, Subscription
 
+@pytest.fixture
+def mock_logger():
+    return Mock()
+
 # Use an in-memory database for testing
 @pytest.fixture(scope="function")
-def db_connection():
+def db_connection(mock_logger):
     original_db_path = os.getenv("DB_PATH")
     original_db_name = os.getenv("DB_NAME")
 
     os.environ["DB_PATH"] = "" # Set DB_PATH to empty for in-memory tests
     os.environ["DB_NAME"] = ":memory:"
 
-    conn = get_db_connection()
+    conn = get_db_connection(mock_logger)
     yield conn
     conn.close()
 
@@ -37,19 +41,19 @@ def db_connection():
     
 
 @pytest.fixture(scope="function")
-def setup_subscription_db(db_connection):
+def setup_subscription_db(db_connection, mock_logger):
     # Ensure tables are clean before each test
-    execute_query("DROP TABLE IF EXISTS subscriptions", conn=db_connection)
-    execute_query("DROP TABLE IF EXISTS tiers", conn=db_connection)
-    execute_query("DROP TABLE IF EXISTS features", conn=db_connection)
-    execute_query("DROP TABLE IF EXISTS limits", conn=db_connection)
+    execute_query("DROP TABLE IF EXISTS subscriptions", conn=db_connection, logger=mock_logger)
+    execute_query("DROP TABLE IF EXISTS tiers", conn=db_connection, logger=mock_logger)
+    execute_query("DROP TABLE IF EXISTS features", conn=db_connection, logger=mock_logger)
+    execute_query("DROP TABLE IF EXISTS limits", conn=db_connection, logger=mock_logger)
 
-    datastore_manager = DatastoreManager([Limit, Feature, Tier, Subscription], connection=db_connection)
+    datastore_manager = DatastoreManager(mock_logger, [Limit, Feature, Tier, Subscription], connection=db_connection)
     yield datastore_manager
 
 @pytest.fixture(scope="function")
-def auth_manager():
-    return AuthorizationManager()
+def auth_manager(mock_logger):
+    return AuthorizationManager(mock_logger)
 
 @pytest.fixture(scope="function")
 def mock_stripe_adapter():
@@ -64,23 +68,24 @@ def mock_stripe_adapter():
                 yield adapter
 
 @pytest.fixture(scope="function")
-def payment_gateway_manager(mock_stripe_adapter):
-    return PaymentGatewayManager(adapters={"stripe": mock_stripe_adapter})
+def payment_gateway_manager(mock_stripe_adapter, mock_logger):
+    return PaymentGatewayManager(mock_logger, adapters={"stripe": mock_stripe_adapter})
 
 @pytest.fixture(scope="function")
-def multi_tenant_manager(setup_subscription_db, auth_manager):
+def multi_tenant_manager(setup_subscription_db, auth_manager, mock_logger):
     # We need a real MultiTenantManager for subscription tests
     from src.multi_tenant.manager import MultiTenantManager as RealMultiTenantManager
-    return RealMultiTenantManager(setup_subscription_db, auth_manager)
+    return RealMultiTenantManager(mock_logger, setup_subscription_db, auth_manager)
 
 @pytest.fixture(scope="function")
 def subscription_manager(setup_subscription_db, payment_gateway_manager, 
-auth_manager, multi_tenant_manager):
+auth_manager, multi_tenant_manager, mock_logger):
     import importlib
     import src.subscription.manager
     importlib.reload(src.subscription.manager) # Force reload
     from src.subscription.manager import SubscriptionManager as RealSubscriptionManager # Explicit import
     return RealSubscriptionManager(
+        logger=mock_logger,
         datastore_manager=setup_subscription_db,
         payment_gateway_manager=payment_gateway_manager,
         authorization_manager=auth_manager,
@@ -91,6 +96,7 @@ auth_manager, multi_tenant_manager):
 def test_subscription_manager_registers_permissions(auth_manager, setup_subscription_db, payment_gateway_manager, multi_tenant_manager):
     # Instantiate SubscriptionManager to trigger permission registration
     SubscriptionManager(
+        logger=mock_logger,
         datastore_manager=setup_subscription_db,
         payment_gateway_manager=payment_gateway_manager,
         authorization_manager=auth_manager,

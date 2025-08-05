@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import os
 import secrets
 from src.authorization.manager import AuthorizationManager # Import AuthorizationManager
+from typing import Any
 
 # Entity definitions for the multi_tenant module
 
@@ -24,7 +25,8 @@ MODULE_PERMISSIONS = [
 ]
 
 class MultiTenantManager:
-    def __init__(self, datastore_manager: DatastoreManager, authorization_manager: AuthorizationManager | None = None):
+    def __init__(self, logger: Any, datastore_manager: DatastoreManager, authorization_manager: AuthorizationManager | None = None):
+        self.logger = logger
         self.datastore = datastore_manager
         self.datastore.register_dataclass_models([Account, User])
         self.accounts_dao = self.datastore.get_dao("accounts")
@@ -63,6 +65,7 @@ class MultiTenantManager:
         if retrieved_account_data:
             retrieved_account_data['created_at'] = self._convert_timestamp_to_datetime(retrieved_account_data.get('created_at'))
             return Account(**retrieved_account_data)
+        self.logger.error("Failed to create account.")
         raise ValueError("Failed to create account.")
 
     def get_account_by_id(self, account_id: int) -> Account | None:
@@ -74,6 +77,7 @@ class MultiTenantManager:
 
     def create_user(self, account_id: int, username: str, password: str) -> User:
         if not self.datastore.get_by_id("accounts", account_id):
+            self.logger.error(f"Invalid account ID provided: {account_id}")
             raise ValueError("Invalid account ID provided.")
 
         hashed_password = self._hash_password(password)
@@ -88,6 +92,7 @@ class MultiTenantManager:
             retrieved_user_data['created_at'] = self._convert_timestamp_to_datetime(retrieved_user_data.get('created_at'))
             retrieved_user_data['reset_token_created_at'] = self._convert_timestamp_to_datetime(retrieved_user_data.get('reset_token_created_at'))
             return User(**retrieved_user_data)
+        self.logger.error("Failed to create user.")
         raise ValueError("Failed to create user.")
 
     def authenticate_user(self, username: str, password: str) -> User | None:
@@ -147,6 +152,7 @@ class MultiTenantManager:
     def update_user(self, user_id: int, data: dict) -> bool:
         user = self.get_user_by_id(user_id)
         if not user:
+            self.logger.error(f"User with ID {user_id} not found for update.")
             return False
         
         if "password" in data:
@@ -159,6 +165,7 @@ class MultiTenantManager:
     def delete_user(self, user_id: int) -> bool:
         user = self.get_user_by_id(user_id)
         if not user:
+            self.logger.error(f"User with ID {user_id} not found for deletion.")
             return False
         self.datastore.delete("users", user_id)
         return True

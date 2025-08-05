@@ -25,6 +25,13 @@ disable = [
     "C0116"  # Missing function or method docstring
 ]
 
+[tool.pylint."src.logging_system"]
+disable = [
+    "C0114", # Missing module docstring
+    "C0115", # Missing class docstring
+    "C0116"  # Missing function or method docstring
+]
+
 [tool.pytest.ini_options]
 python_files = "test_*.py"
 python_classes = "Test"

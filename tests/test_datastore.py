@@ -1,6 +1,7 @@
 import pytest
 import os
 import sqlite3
+from unittest.mock import Mock
 from src.datastore.database import get_db_connection, execute_query, fetch_one, fetch_all
 from src.datastore.schema import create_tables_from_entity_definitions
 from src.datastore.dao import BaseDAO
@@ -20,9 +21,13 @@ class TestProduct:
     product_name: str
     price: float
 
+@pytest.fixture
+def mock_logger():
+    return Mock()
+
 # Use an in-memory database for testing
 @pytest.fixture(scope="function")
-def db_connection():
+def db_connection(mock_logger):
     # Temporarily set environment variables for testing
     original_db_name = os.getenv("DB_NAME")
     original_db_path = os.getenv("DB_PATH")
@@ -30,7 +35,7 @@ def db_connection():
     os.environ["DB_NAME"] = ":memory:"
     os.environ["DB_PATH"] = "" # Set DB_PATH to empty for in-memory tests
 
-    conn = get_db_connection()
+    conn = get_db_connection(mock_logger)
     yield conn
     conn.close()
 
@@ -52,12 +57,12 @@ def datastore_manager(datastore_manager_with_models):
     return datastore_manager_with_models
 
 @pytest.fixture(scope="function")
-def datastore_manager_with_models(db_connection):
+def datastore_manager_with_models(db_connection, mock_logger):
     # Ensure tables are clean before each test
     db_connection.execute("DROP TABLE IF EXISTS testusers")
     db_connection.execute("DROP TABLE IF EXISTS testproducts")
     # Initialize DatastoreManager with models and pass the connection
-    manager = DatastoreManager([TestUser, TestProduct], connection=db_connection)
+    manager = DatastoreManager(mock_logger, [TestUser, TestProduct], connection=db_connection)
     return manager
 
 
@@ -114,8 +119,8 @@ def test_delete_user(datastore_manager_with_models):
     assert deleted_user is None
 
 
-def test_datastore_manager_initialization(db_connection):
-    manager = DatastoreManager([TestUser, TestProduct], connection=db_connection)
+def test_datastore_manager_initialization(db_connection, mock_logger):
+    manager = DatastoreManager(mock_logger, [TestUser, TestProduct], connection=db_connection)
     assert manager.get_dao("testusers") is not None
     assert isinstance(manager.get_dao("testusers"), BaseDAO)
     assert manager.get_dao("testproducts") is not None

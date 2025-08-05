@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 import os
 
 from src.payment_gateway.stripe_adapter import StripeAdapter
@@ -14,9 +14,13 @@ def mock_stripe_env_vars():
     }):
         yield
 
+@pytest.fixture
+def mock_logger():
+    return Mock()
+
 # Fixture for StripeAdapter with mocked stripe API
 @pytest.fixture
-def mock_stripe_adapter():
+def mock_stripe_adapter(mock_logger):
     with patch('stripe.Charge.create') as mock_charge_create:
         with patch('stripe.Webhook.construct_event') as mock_webhook_construct_event:
             with patch('stripe.Customer.create') as mock_customer_create:
@@ -25,7 +29,7 @@ def mock_stripe_adapter():
                         with patch('stripe.Subscription.create') as mock_subscription_create:
                             with patch('stripe.Subscription.delete') as mock_subscription_delete:
 
-                                adapter = StripeAdapter()
+                                adapter = StripeAdapter(mock_logger)
                                 adapter.mock_charge_create = mock_charge_create
                                 adapter.mock_webhook_construct_event = mock_webhook_construct_event
                                 adapter.mock_customer_create = mock_customer_create
@@ -37,8 +41,8 @@ def mock_stripe_adapter():
 
 # Fixture for PaymentGatewayManager
 @pytest.fixture
-def payment_gateway_manager():
-    return PaymentGatewayManager()
+def payment_gateway_manager(mock_logger):
+    return PaymentGatewayManager(mock_logger)
 
 
 def test_stripe_adapter_process_payment(mock_stripe_adapter):

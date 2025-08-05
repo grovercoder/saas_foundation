@@ -2,6 +2,7 @@ from src.datastore.manager import DatastoreManager
 from src.authorization.manager import AuthorizationManager
 from src.payment_gateway.manager import PaymentGatewayManager
 from src.multi_tenant.manager import MultiTenantManager # Added import for MultiTenantManager
+from typing import Any
 from src.subscription.models import Limit, Feature, Tier, Subscription
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
@@ -32,12 +33,14 @@ MODULE_PERMISSIONS = [
 class SubscriptionManager:
     def __init__(
         self,
+        logger: Any,
         datastore_manager: DatastoreManager,
         payment_gateway_manager: PaymentGatewayManager,
         authorization_manager: AuthorizationManager | None = None,
         multi_tenant_manager: MultiTenantManager | None = None
     ):
 
+        self.logger = logger
         self.datastore = datastore_manager
         self.payment_gateway = payment_gateway_manager
         self.multi_tenant_manager = multi_tenant_manager # Store multi_tenant_manager
@@ -196,6 +199,7 @@ class SubscriptionManager:
         active_subscriptions = [sub for sub in all_subscriptions if sub.get('tier_id') == tier_id and sub.get('status') == 'active']
 
         if active_subscriptions:
+            self.logger.error("Cannot deactivate tier with active subscriptions.")
             raise ValueError("Cannot deactivate tier with active subscriptions.")
         return self.update_tier(tier_id, status="deactivated")
 
@@ -205,8 +209,10 @@ class SubscriptionManager:
     def delete_tier(self, tier_id: str):
         tier = self.get_tier_by_id(tier_id)
         if not tier:
+            self.logger.error(f"Tier with ID {tier_id} not found.")
             raise ValueError(f"Tier with ID {tier_id} not found.")
         if tier.status != "deactivated":
+            self.logger.error(f"Tier with ID {tier_id} must be deactivated before deletion. Current status: {tier.status}")
             raise ValueError(f"Tier with ID {tier_id} must be deactivated before deletion.")
         self.datastore.delete("tiers", tier_id)
 
@@ -286,6 +292,7 @@ class SubscriptionManager:
             # Fetch subscription from Stripe to get details
             stripe_subscription = self.payment_gateway.stripe.get_subscription(subscription_id) # Assuming this method exists
             if not stripe_subscription:
+                self.logger.error(f"Error: Stripe subscription {subscription_id} not found.")
                 raise ValueError(f"Error: Stripe subscription {subscription_id} not found.")
                 return None
 
@@ -300,7 +307,7 @@ class SubscriptionManager:
             
             if not tier:
                 all_tiers_debug = self.datastore.get_all("tiers")
-                
+                self.logger.error(f"Error: Tier not found for Stripe product ID {stripe_product_id}. All tiers: {all_tiers_debug}")
                 raise ValueError(f"Error: Tier not found for Stripe product ID {stripe_product_id}.")
                 return None
 

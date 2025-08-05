@@ -10,15 +10,17 @@ from types import UnionType
 from datetime import datetime
 
 class DatastoreManager:
-    def __init__(self, models: List[Type[Any]] | None = None, connection: Any | None = None):
+    def __init__(self, logger: Any, models: List[Type[Any]] | None = None, connection: Any | None = None):
+        self.logger = logger
         self.entity_definitions = {}
         self._daos = {}
         self.connection = connection # Store the connection
-        if models:
-            
-            self.register_dataclass_models(models)
         
-        self._initialize_datastore()
+        if models:
+            self.register_dataclass_models(models)
+            self._initialize_datastore()
+        else:
+            self._initialize_datastore()
         
 
     
@@ -26,10 +28,10 @@ class DatastoreManager:
     def _initialize_datastore(self):
         
         # Create tables based on entity definitions
-        create_tables_from_entity_definitions(self.entity_definitions, conn=self.connection)
+        create_tables_from_entity_definitions(self.entity_definitions, conn=self.connection, logger=self.logger)
         # Create DAO instances for each entity
         for entity_name in self.entity_definitions.keys():
-            self._daos[entity_name] = BaseDAO(entity_name, self.connection)
+            self._daos[entity_name] = BaseDAO(entity_name, self.connection, logger=self.logger)
         
 
     def register_entity_definitions(self, new_entity_definitions):
@@ -38,11 +40,11 @@ class DatastoreManager:
         # Merge new definitions with existing ones
         self.entity_definitions.update(new_entity_definitions)
         # Create tables for newly registered entities
-        create_tables_from_entity_definitions(new_entity_definitions, conn=self.connection)
+        create_tables_from_entity_definitions(new_entity_definitions, conn=self.connection, logger=self.logger)
         # Create DAO instances for newly registered entities
         for entity_name in new_entity_definitions.keys():
             if entity_name not in self._daos:
-                self._daos[entity_name] = BaseDAO(entity_name, self.connection)
+                self._daos[entity_name] = BaseDAO(entity_name, self.connection, logger=self.logger)
             
 
     def get_dao(self, entity_name):
@@ -161,7 +163,7 @@ class DatastoreManager:
 
     def execute_query(self, query: str, params: tuple = ()): # Add this method
         from src.datastore.database import execute_query as db_execute_query
-        return db_execute_query(query, params)
+        return db_execute_query(query, params, logger=self.logger)
 
     # Optional: Provide direct access properties for common DAOs
     @property

@@ -1,11 +1,13 @@
 from src.payment_gateway.base import PaymentGatewayAdapter
 from src.payment_gateway.stripe_adapter import StripeAdapter
+from typing import Any
 
 class PaymentGatewayManager:
-    def __init__(self, adapters: dict | None = None):
+    def __init__(self, logger: Any, adapters: dict | None = None):
+        self.logger = logger
         if adapters is None:
             self._adapters = {
-                "stripe": StripeAdapter() # Initialize with StripeAdapter
+                "stripe": StripeAdapter(self.logger) # Initialize with StripeAdapter
             }
         else:
             self._adapters = adapters

@@ -1,7 +1,8 @@
 from typing import List, Dict, Any
 
 class AuthorizationManager:
-    def __init__(self):
+    def __init__(self, logger: Any):
+        self.logger = logger
         self._registered_permissions: List[Dict[str, str]] = []
 
     def register_permissions(self, permissions: List[Dict[str, str]]):

@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-def get_db_connection():
+def get_db_connection(logger):
     db_path = os.getenv("DB_PATH", "./data")
     db_name = os.getenv("DB_NAME", "application.db")
 
@@ -21,7 +21,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row  # This allows accessing columns by name
     return conn
 
-def execute_query(query, params=(), conn=None):
+def execute_query(query, params=(), conn=None, logger=None):
     if conn is None:
         conn = get_db_connection()
         close_conn = True
@@ -40,7 +40,7 @@ def execute_query(query, params=(), conn=None):
         if close_conn:
             conn.close()
 
-def fetch_one(query, params=(), conn=None):
+def fetch_one(query, params=(), conn=None, logger=None):
     if conn is None:
         conn = get_db_connection()
         close_conn = True
@@ -55,7 +55,7 @@ def fetch_one(query, params=(), conn=None):
         if close_conn:
             conn.close()
 
-def fetch_all(query, params=(), conn=None):
+def fetch_all(query, params=(), conn=None, logger=None):
     if conn is None:
         conn = get_db_connection()
         close_conn = True
