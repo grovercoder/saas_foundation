@@ -1,19 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "foundation"
+name = "saas_foundation"
 version = "0.1.0"
+description = "A pure service-level library providing core multi-tenant SaaS services and a robust datastorage solution."
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["saas", "multi-tenant", "library", "orchestration"]
+authors = [
+  { name = "Shawn", email = "shawn@example.com" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "bcrypt>=4.3.0",
-    "fastapi>=0.116.1",
-    "httpx>=0.28.1",
-    "jinja2>=3.1.6",
-    "passlib>=1.7.4",
     "pytest>=8.4.1",
     "python-dotenv>=1.1.1",
-    "python-jose[cryptography]>=3.5.0",
     "stripe>=12.4.0",
-    "uvicorn>=0.35.0",
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/shawn/saas_foundation"
+"Bug Tracker" = "https://github.com/shawn/saas_foundation/issues"
+
+[tool.uv]
+package-dir = "src/saas_foundation"
+
+[tool.uv.build]
+package-layout = "src/saas_foundation"
 
 [tool.black]
 line-length = 88
@@ -28,7 +48,7 @@ disable = [
     "W0613", # Unused argument
     "C0114", # Missing module docstring
     "C0115", # Missing class docstring
-    "C0116"  # Missing function or method docstring
+    "C0116"  # Missing function or method method docstring
 ]
 
 [tool.pylint."src.logging_system"]
@@ -43,5 +63,5 @@ python_files = "test_*.py"
 python_classes = "Test"
 python_functions = "test_"
 
-
-
+[tool.setuptools.packages.find]
+where = ['src']

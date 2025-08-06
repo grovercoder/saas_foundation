@@ -2,7 +2,11 @@
 
 ### **Vision**
 
-This application will serve as a central orchestration layer, acting as a "command center" to manage and execute capabilities from a collection of external, custom-built libraries. The core purpose is not to create new functionality itself, but to seamlessly integrate and combine the power of these external services into complex workflows. The application's value is in its ability to discover, manage, and execute these imported capabilities efficiently and reliably.
+This project, "Foundation," is a pure service-level library designed to provide core multi-tenant SaaS services and a robust datastorage solution. Its primary purpose is to offer foundational backend capabilities, ensuring a clear separation of concerns from any presentation-layer elements.
+
+### **Core Purpose**
+
+The "Foundation" project focuses exclusively on backend service logic. Any functionality related to "how something looks" (e.g., web interfaces, UI components, direct templating for presentation) is considered a presentation-level concern and does not belong within this project. These presentation aspects will be handled by a separate integration project, which will serve as the ultimate "application" built upon this foundational service layer.
 
 ### **Core Concepts**
 
@@ -53,31 +57,20 @@ The application will include the following internal modules to provide core func
         *   Upon receiving this webhook, a subscription record is created in the database.
         *   An account and a default user are created (if they don't already exist), and the account is linked to the subscription record, which also indicates the associated tier.
 *   **Authorization System:** A system responsible for managing user permissions and access control to various parts of the application, utilizing a **hybrid role-based access control list (RBAC) system**. It provides a mechanism for other modules to register their exposed permissions.
-*   **Templating System:**
-    *   A module for generating dynamic content, primarily for the presentation layer.
-    *   It utilizes **Jinja2** as its templating engine.
-    *   It exposes a configured Jinja2 `Environment` object for use by other modules and child applications.
-    *   By default, it uses a `templates` directory located at the project root (`foundation/templates`) as the base for template files.
-    *   It supports the use of namespace subdirectories within the `templates` directory to organize templates and minimize naming conflicts.
-    *   Child applications are expected to integrate with this system by using a Jinja2 `CombinedLoader`.
-        *   This `CombinedLoader` should include their own `FileSystemLoader` (configured for their application-specific templates directory) and a `PackageLoader` configured to load templates from this foundational templating system.
-        *   This setup allows child applications to easily override default templates provided by the foundation without modifying the original template files.
+
 
 *   **Email Services:**
     *   A custom library that provides SMTP services for sending and managing outgoing emails.
-    *   It supports sending both HTML and plain text versions of email bodies.
-    *   Email bodies can be defined using templates (leveraging the Templating System) or provided directly as string content.
-    *   It loads SMTP connection properties (server, port, username, password, TLS settings, sender email) from environment variables.
-*   **Web Service:**
-    *   The central entry point for the application's presentation layer, providing an API or web interface.
-    *   It is built using **FastAPI**.
-    *   Integrates with the **Templating System** to render dynamic content.
-    *   Provides initial public routes: `/`, `/login`, `/logout`, `/pricing`, and `/signup`.
-    *   Utilizes **JWT (JSON Web Tokens)** for user authentication and session management.
+    *   It supports sending both HTML and plain text versions of email bodies as pre-rendered string content. Template rendering is handled externally by the calling application.
+
 
 ### **Presentation Layer**
 
-The various internal systems (Multi-tenant Management, Payment Gateway, Subscription Management, Authorization, Templating, Dynamic Forms, and Workflow Management) will work together to support the **Web Service**. This web service will act as the application's presentation layer, providing the user interface and APIs that interact with all the underlying functionality.
+Presentation-level concerns (e.g., web interfaces, UI components, direct templating for presentation) are explicitly excluded from this project. These aspects will be handled by a separate integration project, which will serve as the ultimate "application" built upon this foundational service layer. This separation ensures the "Foundation" project remains a pure service-level library, not bound to any specific web framework, templating solution, or frontend framework/look & feel.
+
+### **Future Integration Projects**
+
+A later project will be created to provide the web services, templating, and integrate application-specific service libraries (e.g., for dynamic forms and custom workflows). This approach ensures the "Foundation" project remains a pure service layer, decoupled from specific presentation or application-level concerns.
 
 ### **Development Environment & Standards**
 
