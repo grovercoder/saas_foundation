@@ -1,4 +1,3 @@
-print("Executing saas_foundation/__init__.py")
 from .authorization.manager import AuthorizationManager
 from .datastore.manager import DatastoreManager
 from .email_services.manager import EmailManager
