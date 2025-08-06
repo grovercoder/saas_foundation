@@ -68,7 +68,12 @@ The application will include the following internal modules to provide core func
     *   It supports sending both HTML and plain text versions of email bodies.
     *   Email bodies can be defined using templates (leveraging the Templating System) or provided directly as string content.
     *   It loads SMTP connection properties (server, port, username, password, TLS settings, sender email) from environment variables.
-*   **Web Service:** The central entry point for the application's presentation layer, providing an API or web interface.
+*   **Web Service:**
+    *   The central entry point for the application's presentation layer, providing an API or web interface.
+    *   It is built using **FastAPI**.
+    *   Integrates with the **Templating System** to render dynamic content.
+    *   Provides initial public routes: `/`, `/login`, `/logout`, `/pricing`, and `/signup`.
+    *   Utilizes **JWT (JSON Web Tokens)** for user authentication and session management.
 
 ### **Presentation Layer**
 

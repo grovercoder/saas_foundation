@@ -8,6 +8,10 @@ from src.subscription.manager import SubscriptionManager
 from src.logging_system.manager import LogManager
 from src.templating.manager import TemplatingManager
 from src.email_services.manager import EmailManager
+from src.web_service.app import initialize_web_service
+from src.web_service.routes import public as public_routes
+import uvicorn
+import asyncio
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -76,6 +80,21 @@ def main():
     payment_gateway_manager = PaymentGatewayManager(logger)
     multi_tenant_manager = MultiTenantManager(logger, datastore_manager, authorization_manager)
     subscription_manager = SubscriptionManager(logger, datastore_manager, payment_gateway_manager, authorization_manager)
+
+    web_service = initialize_web_service(logger, templating_manager, None, args.mode) # Pass None for server initially, and the mode
+    web_service.get_app().include_router(public_routes.router)
+
+    config = uvicorn.Config(web_service.get_app(), host="0.0.0.0", port=8000, log_level="info")
+    server = uvicorn.Server(config)
+
+    # Now set the server instance on the web_service after it's created
+    web_service.set_server(server)
+
+    if args.mode == "dev":
+        async def run_server():
+            await server.serve()
+
+        asyncio.run(run_server())
 
 if __name__ == "__main__":
     main()
