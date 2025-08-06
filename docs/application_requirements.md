@@ -77,8 +77,8 @@ A later project will be created to provide the web services, templating, and int
 * **Language:** Python  
 * **Package Management:** The **uv** tool will be used for all package management.  
   * To initialize the project, run `uv init`.  
-  * To add dependencies, use `uv add \<package\_name\>`.  
-  * To run scripts or commands, use `uv run \<command\>`.  
+  * To add dependencies, use `uv add <package_name>`.  
+  * To run scripts or commands, use `uv run <command>`.  
   * To run tests use `uv run python -m pytest`
 * **Code Standards:** The code must adhere to standards enforced by **black** for formatting and **pylint** for style and static analysis.  
 * **Testing:** All unit and integration tests will be written using **pytest**. Tests should be run using the command uv run pytest.

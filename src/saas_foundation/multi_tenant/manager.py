@@ -1,10 +1,12 @@
-from src.datastore.manager import DatastoreManager
-from src.multi_tenant.models import Account, User
+from saas_foundation.datastore.manager import DatastoreManager
+from saas_foundation.multi_tenant.models import Account, User
 import bcrypt
 from datetime import datetime, timedelta, timezone
 import os
 import secrets
-from src.authorization.manager import AuthorizationManager # Import AuthorizationManager
+from saas_foundation.datastore.manager import DatastoreManager
+from saas_foundation.multi_tenant.models import Account, User
+from saas_foundation.authorization.manager import AuthorizationManager # Import AuthorizationManager
 from typing import Any
 
 # Entity definitions for the multi_tenant module

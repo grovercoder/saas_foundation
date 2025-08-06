@@ -1,4 +1,4 @@
-from src.datastore.database import execute_query
+from saas_foundation.datastore.database import execute_query
 
 def create_tables_from_entity_definitions(entity_definitions, conn=None, logger=None):
     """Creates database tables based on provided entity definitions."""

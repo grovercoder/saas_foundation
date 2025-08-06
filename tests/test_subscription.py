@@ -4,12 +4,12 @@ import sqlite3
 from unittest.mock import patch, MagicMock, Mock
 from datetime import datetime, timedelta, timezone
 
-from src.datastore.manager import DatastoreManager
-from src.datastore.database import get_db_connection, execute_query
-from src.authorization.manager import AuthorizationManager
-from src.payment_gateway.manager import PaymentGatewayManager
-from src.subscription.manager import SubscriptionManager, MODULE_PERMISSIONS
-from src.subscription.models import Limit, Feature, Tier, Subscription
+from saas_foundation.datastore.manager import DatastoreManager
+from saas_foundation.datastore.database import get_db_connection, execute_query
+from saas_foundation.authorization.manager import AuthorizationManager
+from saas_foundation.payment_gateway.manager import PaymentGatewayManager
+from saas_foundation.subscription.manager import SubscriptionManager, MODULE_PERMISSIONS
+from saas_foundation.subscription.models import Limit, Feature, Tier, Subscription
 
 @pytest.fixture
 def mock_logger():
@@ -74,16 +74,16 @@ def payment_gateway_manager(mock_stripe_adapter, mock_logger):
 @pytest.fixture(scope="function")
 def multi_tenant_manager(setup_subscription_db, auth_manager, mock_logger):
     # We need a real MultiTenantManager for subscription tests
-    from src.multi_tenant.manager import MultiTenantManager as RealMultiTenantManager
+    from saas_foundation.multi_tenant.manager import MultiTenantManager as RealMultiTenantManager
     return RealMultiTenantManager(mock_logger, setup_subscription_db, auth_manager)
 
 @pytest.fixture(scope="function")
 def subscription_manager(setup_subscription_db, payment_gateway_manager, 
 auth_manager, multi_tenant_manager, mock_logger):
     import importlib
-    import src.subscription.manager
-    importlib.reload(src.subscription.manager) # Force reload
-    from src.subscription.manager import SubscriptionManager as RealSubscriptionManager # Explicit import
+    import saas_foundation.subscription.manager
+    importlib.reload(saas_foundation.subscription.manager) # Force reload
+    from saas_foundation.subscription.manager import SubscriptionManager as RealSubscriptionManager # Explicit import
     return RealSubscriptionManager(
         logger=mock_logger,
         datastore_manager=setup_subscription_db,

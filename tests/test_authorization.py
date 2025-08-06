@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock
-from src.authorization.manager import AuthorizationManager
+from saas_foundation.authorization.manager import AuthorizationManager
 
 @pytest.fixture
 def auth_manager():

@@ -2,8 +2,8 @@ import pytest
 from unittest.mock import patch, MagicMock, Mock
 import os
 
-from src.payment_gateway.stripe_adapter import StripeAdapter
-from src.payment_gateway.manager import PaymentGatewayManager
+from saas_foundation.payment_gateway.stripe_adapter import StripeAdapter
+from saas_foundation.payment_gateway.manager import PaymentGatewayManager
 
 # Mock environment variables for Stripe
 @pytest.fixture(autouse=True)

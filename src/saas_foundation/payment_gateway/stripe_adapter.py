@@ -1,6 +1,6 @@
 import stripe
 import os
-from src.payment_gateway.base import PaymentGatewayAdapter
+from saas_foundation.payment_gateway.base import PaymentGatewayAdapter
 from typing import Any
 
 class StripeAdapter(PaymentGatewayAdapter):

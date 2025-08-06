@@ -1,4 +1,4 @@
-from src.datastore.database import execute_query, fetch_one, fetch_all
+from saas_foundation.datastore.database import execute_query, fetch_one, fetch_all
 
 class BaseDAO:
     def __init__(self, table_name, connection, logger):

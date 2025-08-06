@@ -1,5 +1,5 @@
-from src.payment_gateway.base import PaymentGatewayAdapter
-from src.payment_gateway.stripe_adapter import StripeAdapter
+from saas_foundation.payment_gateway.base import PaymentGatewayAdapter
+from saas_foundation.payment_gateway.stripe_adapter import StripeAdapter
 from typing import Any
 
 class PaymentGatewayManager:

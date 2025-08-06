@@ -4,11 +4,11 @@ import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 
-from src.datastore.manager import DatastoreManager
-from src.datastore.database import get_db_connection, execute_query
-from src.multi_tenant.manager import MultiTenantManager, MODULE_PERMISSIONS
-from src.authorization.manager import AuthorizationManager # Import AuthorizationManager
-from src.multi_tenant.models import Account, User
+from saas_foundation.datastore.manager import DatastoreManager
+from saas_foundation.datastore.database import get_db_connection, execute_query
+from saas_foundation.multi_tenant.manager import MultiTenantManager, MODULE_PERMISSIONS
+from saas_foundation.authorization.manager import AuthorizationManager # Import AuthorizationManager
+from saas_foundation.multi_tenant.models import Account, User
 
 @pytest.fixture
 def mock_logger():

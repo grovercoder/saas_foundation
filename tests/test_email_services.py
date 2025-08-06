@@ -2,7 +2,7 @@ import pytest
 import os
 from unittest.mock import Mock, patch
 import smtplib
-from src.email_services.manager import EmailManager
+from saas_foundation.email_services.manager import EmailManager
 
 
 @pytest.fixture

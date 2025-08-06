@@ -2,10 +2,10 @@ import pytest
 import os
 import sqlite3
 from unittest.mock import Mock
-from src.datastore.database import get_db_connection, execute_query, fetch_one, fetch_all
-from src.datastore.schema import create_tables_from_entity_definitions
-from src.datastore.dao import BaseDAO
-from src.datastore.manager import DatastoreManager # Added import for DatastoreManager
+from saas_foundation.datastore.database import get_db_connection, execute_query, fetch_one, fetch_all
+from saas_foundation.datastore.schema import create_tables_from_entity_definitions
+from saas_foundation.datastore.dao import BaseDAO
+from saas_foundation.datastore.manager import DatastoreManager # Added import for DatastoreManager
 from dataclasses import dataclass, field
 from typing import Optional
 

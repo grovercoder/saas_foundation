@@ -1,9 +1,13 @@
-from src.datastore.manager import DatastoreManager
-from src.authorization.manager import AuthorizationManager
-from src.payment_gateway.manager import PaymentGatewayManager
-from src.multi_tenant.manager import MultiTenantManager # Added import for MultiTenantManager
+from saas_foundation.datastore.manager import DatastoreManager
+from saas_foundation.authorization.manager import AuthorizationManager
+from saas_foundation.payment_gateway.manager import PaymentGatewayManager
+from saas_foundation.datastore.manager import DatastoreManager
+from saas_foundation.authorization.manager import AuthorizationManager
+from saas_foundation.payment_gateway.manager import PaymentGatewayManager
+from saas_foundation.multi_tenant.manager import MultiTenantManager # Added import for MultiTenantManager
+from saas_foundation.subscription.models import Limit, Feature, Tier, Subscription
 from typing import Any
-from src.subscription.models import Limit, Feature, Tier, Subscription
+from saas_foundation.subscription.models import Limit, Feature, Tier, Subscription
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
 import json # For storing features and limits as JSON strings

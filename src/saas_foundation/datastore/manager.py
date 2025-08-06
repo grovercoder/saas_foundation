@@ -1,5 +1,5 @@
-from src.datastore.schema import create_tables_from_entity_definitions
-from src.datastore.dao import BaseDAO
+from saas_foundation.datastore.schema import create_tables_from_entity_definitions
+from saas_foundation.datastore.dao import BaseDAO
 
 import os
 from dataclasses import is_dataclass, fields, MISSING
@@ -162,7 +162,7 @@ class DatastoreManager:
         return data_list
 
     def execute_query(self, query: str, params: tuple = ()): # Add this method
-        from src.datastore.database import execute_query as db_execute_query
+        from saas_foundation.datastore.database import execute_query as db_execute_query
         return db_execute_query(query, params, logger=self.logger)
 
     # Optional: Provide direct access properties for common DAOs
