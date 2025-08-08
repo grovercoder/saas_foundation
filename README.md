@@ -24,7 +24,7 @@ This project uses `uv` for package management.
     ```
 2.  **Install dependencies:**
     ```bash
-    uv pip install -r requirements.txt
+    uv sync
     ```
 
 ### Running Tests
@@ -57,6 +57,28 @@ The following environment variables are used by the application. These should be
 *   `SMTP_PASSWORD`: The password for SMTP authentication.
 *   `SMTP_USE_TLS`: Set to `True` to enable TLS encryption for SMTP (e.g., `True` or `False`).
 *   `SMTP_SENDER_EMAIL`: The email address to be used as the sender.
+
+## Usage
+
+Here's a basic example of how to initialize and use the `DatastoreManager`:
+
+```python
+import os
+from saas_foundation.datastore.manager import DatastoreManager
+
+# Set environment variables (or load from a .env file)
+os.environ['DB_PATH'] = './data'
+os.environ['DB_NAME'] = 'my_application.db'
+
+# Initialize the DatastoreManager
+datastore_manager = DatastoreManager()
+
+# You can now interact with the datastore through the manager
+# For example, to get a database connection:
+db_connection = datastore_manager.get_db_connection()
+print(f"Connected to database: {db_connection}")
+db_connection.close()
+```
 
 ## Code Standards
 
