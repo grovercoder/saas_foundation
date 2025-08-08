@@ -60,5 +60,5 @@ python_classes = "Test"
 python_functions = "test_"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
-packages = ["saas_foundation"]
+packages = find
+where = ["src"]
