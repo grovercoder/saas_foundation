@@ -60,5 +60,6 @@ python_classes = "Test"
 python_functions = "test_"
 
 [tool.setuptools]
-packages = find:
-where = ["src"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
