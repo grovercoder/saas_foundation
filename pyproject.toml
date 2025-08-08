@@ -12,7 +12,7 @@ requires-python = ">=3.10"
 license = "MIT"
 keywords = ["saas", "multi-tenant", "library", "orchestration"]
 authors = [
-  { name = "Shawn", email = "shawn@example.com" }
+    { name = "Shawn", email = "shawn@example.com" }
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
