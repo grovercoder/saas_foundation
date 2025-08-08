@@ -16,7 +16,7 @@ class SaasManager:
 
         # Initialize DatastoreManager
         # If db_path or db_name are not provided, DataStoreManager will attempt to get them from environment variables
-        self.datastore_manager = DatastoreManager(db_path=db_path, db_name=db_name)
+        self.datastore_manager = DatastoreManager()
 
         # Initialize other managers that do not have complex dependencies yet
         self.payment_gateway_manager = PaymentGatewayManager()
