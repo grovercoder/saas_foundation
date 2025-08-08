@@ -15,15 +15,15 @@ authors = [
     { name = "Shawn", email = "shawn@example.com" }
 ]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    # The license classifier has been removed as it is now deprecated
-    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    # The license classifier has been removed as it is now deprecated
+    "Operating System :: OS Independent",
 ]
 dependencies = [
-    "bcrypt>=4.3.0",
-    "pytest>=8.4.1",
-    "python-dotenv>=1.1.1",
-    "stripe>=12.4.0",
+    "bcrypt>=4.3.0",
+    "pytest>=8.4.1",
+    "python-dotenv>=1.1.1",
+    "stripe>=12.4.0",
 ]
 
 [project.urls]
@@ -37,21 +37,21 @@ target-version = ['py310']
 
 [tool.pylint.'MASTER']
 disable = [
-    "C0330", # Wrong hanging indentation before block
-    "C0301", # Line too long
-    "R0903", # Too few public methods
-    "R0913", # Too many arguments
-    "W0613", # Unused argument
-    "C0114", # Missing module docstring
-    "C0115", # Missing class docstring
-    "C0116"  # Missing function or method method docstring
+    "C0330", # Wrong hanging indentation before block
+    "C0301", # Line too long
+    "R0903", # Too few public methods
+    "R0913", # Too many arguments
+    "W0613", # Unused argument
+    "C0114", # Missing module docstring
+    "C0115", # Missing class docstring
+    "C0116"  # Missing function or method method docstring
 ]
 
 [tool.pylint."src.logging_system"]
 disable = [
-    "C0114", # Missing module docstring
-    "C0115", # Missing class docstring
-    "C0116"  # Missing function or method docstring
+    "C0114", # Missing module docstring
+    "C0115", # Missing class docstring
+    "C0116"  # Missing function or method docstring
 ]
 
 [tool.pytest.ini_options]
