@@ -44,14 +44,14 @@ disable = [
     "W0613", # Unused argument
     "C0114", # Missing module docstring
     "C0115", # Missing class docstring
-    "C0116"  # Missing function or method method docstring
+    "C0116" # Missing function or method method docstring
 ]
 
 [tool.pylint."src.logging_system"]
 disable = [
     "C0114", # Missing module docstring
     "C0115", # Missing class docstring
-    "C0116"  # Missing function or method docstring
+    "C0116" # Missing function or method docstring
 ]
 
 [tool.pytest.ini_options]
