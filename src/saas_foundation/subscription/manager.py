@@ -220,6 +220,37 @@ class SubscriptionManager:
             raise ValueError(f"Tier with ID {tier_id} must be deactivated before deletion.")
         self.datastore.delete("tiers", tier_id)
 
+    def get_all_limits(self) -> List[Limit]:
+        all_limits_data = self.datastore.get_all("limits")
+        return [Limit(**{**limit_data, 'default_value': json.loads(limit_data['default_value'])}) for limit_data in all_limits_data]
+
+    def get_all_features(self) -> List[Feature]:
+        all_features_data = self.datastore.get_all("features")
+        return [Feature(**{**feature_data, 'permissions': json.loads(feature_data['permissions'])}) for feature_data in all_features_data]
+
+    def get_all_tiers(self) -> List[Tier]:
+        all_tiers_data = self.datastore.get_all("tiers")
+        tiers = []
+        for tier_data in all_tiers_data:
+            tier_data['features'] = json.loads(tier_data['features'])
+            tier_data['limits'] = json.loads(tier_data['limits'])
+            tier_data['created_at'] = self._convert_timestamp_to_datetime(tier_data.get('created_at'))
+            tier_data['updated_at'] = self._convert_timestamp_to_datetime(tier_data.get('updated_at'))
+            tiers.append(Tier(**tier_data))
+        return tiers
+
+    def get_all_subscriptions(self) -> List[Subscription]:
+        all_subscriptions_data = self.datastore.get_all("subscriptions")
+        subscriptions = []
+        for sub_data in all_subscriptions_data:
+            sub_data['current_period_start'] = self._convert_timestamp_to_datetime(sub_data['current_period_start'])
+            sub_data['current_period_end'] = self._convert_timestamp_to_datetime(sub_data['current_period_end'])
+            sub_data['created_at'] = self._convert_timestamp_to_datetime(sub_data.get('created_at'))
+            sub_data['updated_at'] = self._convert_timestamp_to_datetime(sub_data.get('updated_at'))
+            sub_data['cancel_at_period_end'] = bool(sub_data['cancel_at_period_end'])
+            subscriptions.append(Subscription(id=sub_data['id'], account_id=sub_data['account_id'], tier_id=sub_data['tier_id'], stripe_subscription_id=sub_data['stripe_subscription_id'], status=sub_data['status'], current_period_start=sub_data['current_period_start'], current_period_end=sub_data['current_period_end'], cancel_at_period_end=sub_data['cancel_at_period_end'], created_at=sub_data['created_at'], updated_at=sub_data['updated_at']))
+        return subscriptions
+
     # --- Subscription Management ---
     def create_subscription(
         self,

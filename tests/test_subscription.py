@@ -241,3 +241,69 @@ def test_create_subscription_and_webhook_handling(subscription_manager, multi_te
 
     retrieved_sub_by_stripe_id = subscription_manager.get_subscription_by_stripe_id('sub_test_123')
     assert retrieved_sub_by_stripe_id == subscription
+
+def test_get_all_limits(subscription_manager):
+    limit1 = subscription_manager.create_limit("limit1", "Limit One", "Desc 1", 10)
+    limit2 = subscription_manager.create_limit("limit2", "Limit Two", "Desc 2", 20)
+    all_limits = subscription_manager.get_all_limits()
+    assert len(all_limits) == 2
+    assert limit1 in all_limits
+    assert limit2 in all_limits
+
+def test_get_all_features(subscription_manager):
+    feature1 = subscription_manager.create_feature("feature1", "Feature One", "Desc 1", ["perm1"])
+    feature2 = subscription_manager.create_feature("feature2", "Feature Two", "Desc 2", ["perm2"])
+    all_features = subscription_manager.get_all_features()
+    assert len(all_features) == 2
+    assert feature1 in all_features
+    assert feature2 in all_features
+
+def test_get_all_tiers(subscription_manager):
+    tier1 = subscription_manager.create_tier("tier1", "Tier One", "Desc 1", 10.0, 100.0)
+    tier2 = subscription_manager.create_tier("tier2", "Tier Two", "Desc 2", 20.0, 200.0)
+    all_tiers = subscription_manager.get_all_tiers()
+    assert len(all_tiers) == 2
+    assert tier1 in all_tiers
+    assert tier2 in all_tiers
+
+def test_get_all_subscriptions(subscription_manager, multi_tenant_manager, mock_stripe_adapter):
+    tier = subscription_manager.create_tier(
+        "premium_all", "Premium All Plan", "Full access", 50.00, 500.00,
+        stripe_product_id="prod_test_all"
+    )
+    account = multi_tenant_manager.create_account("Test Account For All Subs")
+
+    mock_stripe_adapter.get_subscription.return_value = {
+        'id': 'sub_test_all_1',
+        'status': 'active',
+        'current_period_start': int(datetime.now(timezone.utc).timestamp()),
+        'current_period_end': int((datetime.now(timezone.utc) + timedelta(days=30)).timestamp()),
+        'cancel_at_period_end': False,
+        'items': {
+            'data': [{'price': {'product': "prod_test_all"}}]
+        }
+    }
+    sub1 = subscription_manager.create_subscription(
+        account.id, tier.id, "sub_test_all_1", "active",
+        datetime.now(timezone.utc), datetime.now(timezone.utc) + timedelta(days=30), False
+    )
+
+    mock_stripe_adapter.get_subscription.return_value = {
+        'id': 'sub_test_all_2',
+        'status': 'active',
+        'current_period_start': int(datetime.now(timezone.utc).timestamp()),
+        'current_period_end': int((datetime.now(timezone.utc) + timedelta(days=60)).timestamp()),
+        'cancel_at_period_end': False,
+        'items': {
+            'data': [{'price': {'product': "prod_test_all"}}]
+        }
+    }
+    sub2 = subscription_manager.create_subscription(
+        account.id, tier.id, "sub_test_all_2", "active",
+        datetime.now(timezone.utc), datetime.now(timezone.utc) + timedelta(days=60), False
+    )
+
+    all_subscriptions = subscription_manager.get_all_subscriptions()
+    assert len(all_subscriptions) == 2
+    assert sub1 in all_subscriptions
+    assert sub2 in all_subscriptions
