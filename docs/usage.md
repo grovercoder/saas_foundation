@@ -2,11 +2,35 @@
 
 This guide provides detailed instructions on how to use the "Foundation" library, covering setup, core module interactions, and common workflows.
 
-## 1. Setup
+## 1. SaasManager: The Orchestration Facade
 
-For initial project setup and dependency installation, please refer to the [README.md](../README.md) file.
+The `SaasManager` acts as a central facade for initializing and accessing all core managers within the "Foundation" library. This simplifies the setup process for consuming applications by handling the dependency injection and orchestration of various modules.
 
-Ensure your environment variables are correctly configured as described in the README, especially for database, Stripe, and email services.
+### Initialization
+
+To begin, you typically initialize the `SaasManager`. You can optionally provide `db_path` and `db_name` for the Datastore Module; otherwise, it will attempt to retrieve them from environment variables.
+
+```python
+import os
+from saas_foundation import SaasManager
+
+# Optional: Set environment variables if not already configured
+os.environ['DB_PATH'] = os.getenv('DB_PATH', './data')
+os.environ['DB_NAME'] = os.getenv('DB_NAME', 'my_application.db')
+
+# Initialize the SaasManager
+saas = SaasManager(db_path=os.environ['DB_PATH'], db_name=os.environ['DB_NAME'])
+
+# You can now access individual managers through the saas object:
+log_manager = saas.get_log_manager()
+datastore_manager = saas.get_datastore_manager()
+payment_gateway_manager = saas.get_payment_gateway_manager()
+multi_tenant_manager = saas.get_multi_tenant_manager()
+authorization_manager = saas.get_authorization_manager()
+subscription_manager = saas.get_subscription_manager()
+
+print("SaasManager and all core managers initialized successfully.")
+```
 
 ## 2. Using the Datastore
 
@@ -14,18 +38,11 @@ The Datastore Module provides direct database interaction using SQLite3, without
 
 ### Initialization
 
-To use the datastore, you typically initialize the `DatastoreManager`:
+Access the `DatastoreManager` via the `SaasManager`:
 
 ```python
-import os
-from saas_foundation.datastore.manager import DatastoreManager
-
-# Ensure environment variables are set (e.g., from a .env file)
-os.environ['DB_PATH'] = os.getenv('DB_PATH', './data')
-os.environ['DB_NAME'] = os.getenv('DB_NAME', 'my_application.db')
-
-# Initialize the DatastoreManager
-datastore_manager = DatastoreManager()
+# Assuming 'saas' is an initialized SaasManager instance
+datastore_manager = saas.get_datastore_manager()
 
 # Get a database connection
 db_connection = datastore_manager.get_db_connection()
@@ -41,7 +58,6 @@ External libraries or other modules can register their data models (entities) wi
 
 ```python
 from dataclasses import dataclass
-from saas_foundation.datastore.manager import DatastoreManager
 
 @dataclass
 class MyEntity:
@@ -49,7 +65,7 @@ class MyEntity:
     name: str = None
     value: str = None
 
-# Assuming datastore_manager is already initialized
+# Assuming datastore_manager is already initialized (e.g., from saas.get_datastore_manager())
 datastore_manager.register_entity_definition(MyEntity)
 
 # This will create the 'my_entity' table if it doesn't exist
@@ -61,7 +77,7 @@ datastore_manager.register_entity_definition(MyEntity)
 After registering an entity, you can obtain a DAO for it and perform CRUD operations.
 
 ```python
-# Assuming MyEntity has been registered
+# Assuming MyEntity has been registered and datastore_manager is initialized
 my_entity_dao = datastore_manager.get_dao(MyEntity)
 
 # Create a new entity
@@ -93,10 +109,11 @@ The Authorization System provides a hybrid RBAC (Role-Based Access Control) mech
 
 ### Initialization
 
-```python
-from saas_foundation.authorization.manager import AuthorizationManager
+Access the `AuthorizationManager` via the `SaasManager`:
 
-auth_manager = AuthorizationManager()
+```python
+# Assuming 'saas' is an initialized SaasManager instance
+authorization_manager = saas.get_authorization_manager()
 ```
 
 ### Registering Permissions
@@ -105,15 +122,14 @@ Modules can register their specific permissions:
 
 ```python
 # Example: A hypothetical 'document_management' module registering permissions
-auth_manager.register_permissions(
+authorization_manager.register_permissions(
     "document_management",
     ["document:create", "document:read", "document:update", "document:delete"]
 )
 
 # Example: Multi-tenant module registering its permissions (as defined in its manager)
-from saas_foundation.multi_tenant.manager import MultiTenantManager
-
-multi_tenant_manager = MultiTenantManager(datastore_manager=datastore_manager, auth_manager=auth_manager)
+# Assuming 'saas' is an initialized SaasManager instance
+multi_tenant_manager = saas.get_multi_tenant_manager()
 multi_tenant_manager.register_permissions()
 ```
 
@@ -122,11 +138,11 @@ multi_tenant_manager.register_permissions()
 To check if a user (or a role associated with a user) has a specific permission:
 
 ```python
-# Assuming you have a user object or user ID
+# Assuming you have a user object or user ID and authorization_manager is initialized
 user_id = 123
 permission_key = "document:read"
 
-if auth_manager.has_permission(user_id, permission_key):
+if authorization_manager.has_permission(user_id, permission_key):
     print(f"User {user_id} has permission: {permission_key}")
 else:
     print(f"User {user_id} does NOT have permission: {permission_key}")
@@ -138,16 +154,11 @@ The Subscription Management module allows you to define subscription tiers, feat
 
 ### Initialization
 
-```python
-from saas_foundation.subscription.manager import SubscriptionManager
-from saas_foundation.payment_gateway.manager import PaymentGatewayManager
+Access the `SubscriptionManager` via the `SaasManager`:
 
-# Assuming datastore_manager and auth_manager are initialized
-payment_gateway_manager = PaymentGatewayManager()
-subscription_manager = SubscriptionManager(
-    datastore_manager=datastore_manager,
-    payment_gateway_manager=payment_gateway_manager
-)
+```python
+# Assuming 'saas' is an initialized SaasManager instance
+subscription_manager = saas.get_subscription_manager()
 ```
 
 ### Defining Limits
@@ -155,7 +166,7 @@ subscription_manager = SubscriptionManager(
 Limits define quantifiable restrictions that can be applied to a tier (e.g., maximum users, storage space).
 
 ```python
-# Define a limit
+# Assuming subscription_manager is initialized
 max_users_limit = subscription_manager.define_limit(
     key="max_users",
     name="Maximum Users",
@@ -170,7 +181,7 @@ print(f"Defined Limit: {max_users_limit}")
 Features define capabilities provided by a tier and are associated with specific permissions.
 
 ```python
-# Define a feature
+# Assuming subscription_manager is initialized
 premium_support_feature = subscription_manager.define_feature(
     key="premium_support",
     name="Premium Support",
@@ -187,7 +198,7 @@ Tiers combine features and limits to create different subscription plans. When a
 ```python
 from saas_foundation.subscription.models import TierStatus
 
-# Define a tier
+# Assuming subscription_manager is initialized
 basic_tier = subscription_manager.define_tier(
     key="basic",
     status=TierStatus.ACTIVE_PUBLIC,
@@ -232,7 +243,7 @@ stripe_webhook_payload = {
     }
 }
 
-# Assuming subscription_manager is initialized
+# Assuming subscription_manager is initialized (e.g., from saas.get_subscription_manager())
 # The process_stripe_webhook method would parse the event and create records
 # Note: In a real application, you would verify the webhook signature.
 # This example simplifies the process for demonstration.
@@ -246,13 +257,8 @@ stripe_webhook_payload = {
 While Stripe webhooks handle the primary signup flow, you can also manually create accounts and users using the `MultiTenantManager`.
 
 ```python
-from saas_foundation.multi_tenant.manager import MultiTenantManager
-
-# Assuming datastore_manager and auth_manager are initialized
-multi_tenant_manager = MultiTenantManager(
-    datastore_manager=datastore_manager,
-    auth_manager=auth_manager
-)
+# Assuming 'saas' is an initialized SaasManager instance
+multi_tenant_manager = saas.get_multi_tenant_manager()
 
 # Create an account
 new_account = multi_tenant_manager.create_account("My New Company")
@@ -272,7 +278,7 @@ print(f"Created User: {new_user}")
 User authentication is handled by the Multi-tenant Management module, which includes password hashing and verification.
 
 ```python
-# Assuming multi_tenant_manager is initialized
+# Assuming multi_tenant_manager is initialized (e.g., from saas.get_multi_tenant_manager())
 
 username = "newuser@example.com"
 password = "verysecurepassword123"
