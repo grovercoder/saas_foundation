@@ -8,27 +8,27 @@ version = "0.1.1"
 description = "A pure service-level library providing core multi-tenant SaaS services and a robust datastorage solution."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+# This has been updated to a simple string to fix the deprecation warning
+license = "MIT"
 keywords = ["saas", "multi-tenant", "library", "orchestration"]
 authors = [
-  { name = "Shawn", email = "shawn@example.com" }
+  { name = "Shawn", email = "shawn@example.com" }
 ]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    # The license classifier has been removed as it is now deprecated
+    "Operating System :: OS Independent",
 ]
 dependencies = [
-    "bcrypt>=4.3.0",
-    "pytest>=8.4.1",
-    "python-dotenv>=1.1.1",
-    "stripe>=12.4.0",
+    "bcrypt>=4.3.0",
+    "pytest>=8.4.1",
+    "python-dotenv>=1.1.1",
+    "stripe>=12.4.0",
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/shawn/saas_foundation"
 "Bug Tracker" = "https://github.com/shawn/saas_foundation/issues"
-
 
 
 [tool.black]
@@ -37,21 +37,21 @@ target-version = ['py310']
 
 [tool.pylint.'MASTER']
 disable = [
-    "C0330", # Wrong hanging indentation before block
-    "C0301", # Line too long
-    "R0903", # Too few public methods
-    "R0913", # Too many arguments
-    "W0613", # Unused argument
-    "C0114", # Missing module docstring
-    "C0115", # Missing class docstring
-    "C0116"  # Missing function or method method docstring
+    "C0330", # Wrong hanging indentation before block
+    "C0301", # Line too long
+    "R0903", # Too few public methods
+    "R0913", # Too many arguments
+    "W0613", # Unused argument
+    "C0114", # Missing module docstring
+    "C0115", # Missing class docstring
+    "C0116"  # Missing function or method method docstring
 ]
 
 [tool.pylint."src.logging_system"]
 disable = [
-    "C0114", # Missing module docstring
-    "C0115", # Missing class docstring
-    "C0116"  # Missing function or method docstring
+    "C0114", # Missing module docstring
+    "C0115", # Missing class docstring
+    "C0116"  # Missing function or method docstring
 ]
 
 [tool.pytest.ini_options]
@@ -62,4 +62,7 @@ python_functions = "test_"
 [tool.setuptools]
 package-dir = {"" = "src"}
 
+# We're making the package finding explicit to avoid the `src/docs` error.
 [tool.setuptools.packages.find]
+where = ["src"]
+include = ["saas_foundation*"]
