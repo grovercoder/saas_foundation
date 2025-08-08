@@ -60,5 +60,5 @@ python_classes = "Test"
 python_functions = "test_"
 
 [tool.setuptools]
-packages = find
+packages = find:
 where = ["src"]
