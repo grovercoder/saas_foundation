@@ -33,7 +33,7 @@ class SaasManager:
 
         # Initialize SubscriptionManager, which depends on several other managers
         self.subscription_manager = SubscriptionManager(
-            log_manager=self.log_manager,
+            logger=self.log_manager.get_logger(),
             datastore_manager=self.datastore_manager,
             payment_gateway_manager=self.payment_gateway_manager,
             multi_tenant_manager=self.multi_tenant_manager,
