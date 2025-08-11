@@ -9,14 +9,22 @@ from saas_foundation.payment_gateway.base import PaymentGatewayAdapter
 class StripeAdapter(PaymentGatewayAdapter):
     def __init__(self, logger: Any):
         self.logger = logger
-        stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-        if not stripe.api_key:
-            self.logger.error("STRIPE_SECRET_KEY environment variable not set.")
-            raise ValueError("STRIPE_SECRET_KEY environment variable not set.")
-        self.webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
-        if not self.webhook_secret:
-            self.logger.error("STRIPE_WEBHOOK_SECRET environment variable not set.")
-            raise ValueError("STRIPE_WEBHOOK_SECRET environment variable not set.")
+        self._mock_mode = False
+
+        stripe_secret_key = os.getenv("STRIPE_SECRET_KEY")
+        stripe_webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+        if not stripe_secret_key or not stripe_webhook_secret:
+            self.logger.warning(
+                "Stripe API keys not fully configured. Operating in mock mode. "
+                "Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET for live operations."
+            )
+            self._mock_mode = True
+            self.webhook_secret = ""  # Initialize webhook_secret even in mock mode
+        else:
+            stripe.api_key = stripe_secret_key
+            self.webhook_secret = stripe_webhook_secret
+            self.logger.info("Stripe adapter initialized for live operations.")
 
     def process_payment(
         self, amount: float, currency: str, token: str, description: str
@@ -126,6 +134,29 @@ class StripeAdapter(PaymentGatewayAdapter):
     def create_product(
         self, name: str, description: str = None, product_id: str = None
     ) -> dict:
+        if self._mock_mode:
+            self.logger.info(f"Mocking create_product for name: {name}")
+            mock_id = (
+                product_id
+                if product_id
+                else f"prod_mock_{name.lower().replace(' ', '_')}"
+            )
+            return {
+                "id": mock_id,
+                "object": "product",
+                "active": True,
+                "created": 1678886400,  # Example timestamp
+                "description": description,
+                "livemode": False,
+                "name": name,
+                "package_dimensions": None,
+                "shippable": None,
+                "statement_descriptor": None,
+                "unit_label": None,
+                "updated": 1678886400,
+                "url": None,
+                "metadata": {},
+            }
         try:
             product_data = {
                 "name": name,
@@ -142,6 +173,24 @@ class StripeAdapter(PaymentGatewayAdapter):
             raise ValueError(f"Stripe error creating product: {e}") from e
 
     def retrieve_product(self, product_id: str) -> dict:
+        if self._mock_mode:
+            self.logger.info(f"Mocking retrieve_product for product_id: {product_id}")
+            return {
+                "id": product_id,
+                "object": "product",
+                "active": True,
+                "created": 1678886400,
+                "description": "Mock product description",
+                "livemode": False,
+                "name": f"Mock Product {product_id}",
+                "package_dimensions": None,
+                "shippable": None,
+                "statement_descriptor": None,
+                "unit_label": None,
+                "updated": 1678886400,
+                "url": None,
+                "metadata": {},
+            }
         try:
             product = stripe.Product.retrieve(product_id)
             return product.to_dict()
@@ -156,6 +205,27 @@ class StripeAdapter(PaymentGatewayAdapter):
         description: str = None,
         active: bool = None,
     ) -> dict:
+        if self._mock_mode:
+            self.logger.info(f"Mocking update_product for product_id: {product_id}")
+            mock_product = {
+                "id": product_id,
+                "object": "product",
+                "active": True if active is None else active,
+                "created": 1678886400,
+                "description": (
+                    description if description else "Mock product description"
+                ),
+                "livemode": False,
+                "name": name if name else f"Mock Product {product_id}",
+                "package_dimensions": None,
+                "shippable": None,
+                "statement_descriptor": None,
+                "unit_label": None,
+                "updated": 1678886400,
+                "url": None,
+                "metadata": {},
+            }
+            return mock_product
         try:
             update_data = {}
             if name:
@@ -172,6 +242,24 @@ class StripeAdapter(PaymentGatewayAdapter):
             raise ValueError(f"Stripe error updating product: {e}") from e
 
     def archive_product(self, product_id: str) -> dict:
+        if self._mock_mode:
+            self.logger.info(f"Mocking archive_product for product_id: {product_id}")
+            return {
+                "id": product_id,
+                "object": "product",
+                "active": False,
+                "created": 1678886400,
+                "description": "Mock product description",
+                "livemode": False,
+                "name": f"Mock Product {product_id}",
+                "package_dimensions": None,
+                "shippable": None,
+                "statement_descriptor": None,
+                "unit_label": None,
+                "updated": 1678886400,
+                "url": None,
+                "metadata": {},
+            }
         try:
             # Archiving a product in Stripe is done by setting its 'active' status to False
             product = stripe.Product.modify(product_id, active=False)

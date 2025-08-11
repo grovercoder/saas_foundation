@@ -8,13 +8,25 @@ from saas_foundation.payment_gateway.manager import PaymentGatewayManager
 
 
 # Mock environment variables for Stripe
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_stripe_env_vars():
     with patch.dict(
         os.environ,
         {
             "STRIPE_SECRET_KEY": "test_secret_key",
             "STRIPE_WEBHOOK_SECRET": "test_webhook_secret",
+        },
+    ):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def mock_stripe_env_vars_unconfigured():
+    with patch.dict(
+        os.environ,
+        {
+            "STRIPE_SECRET_KEY": "",
+            "STRIPE_WEBHOOK_SECRET": "",
         },
     ):
         yield
@@ -27,7 +39,7 @@ def mock_logger():
 
 # Fixture for StripeAdapter with mocked stripe API
 @pytest.fixture
-def mock_stripe_adapter(mock_logger):
+def mock_stripe_adapter(mock_logger, mock_stripe_env_vars):
     with patch("stripe.Charge.create") as mock_charge_create:
         with patch("stripe.Webhook.construct_event") as mock_webhook_construct_event:
             with patch("stripe.Customer.create") as mock_customer_create:
@@ -248,3 +260,92 @@ def test_stripe_adapter_archive_product(mock_stripe_adapter):
     mock_stripe_adapter.mock_product_modify.assert_called_once_with(
         "prod_123", active=False
     )
+
+
+# Mock Mode Tests
+@pytest.fixture
+def mock_stripe_adapter_unconfigured(mock_logger, mock_stripe_env_vars_unconfigured):
+    # We don't need to patch stripe API calls here, as they should not be called in mock mode
+    adapter = StripeAdapter(mock_logger)
+    yield adapter
+
+
+def test_stripe_adapter_mock_mode_create_product(mock_stripe_adapter_unconfigured):
+    adapter = mock_stripe_adapter_unconfigured
+    mock_product_name = "Mock Product Name"
+    mock_product_description = "Mock Product Description"
+    mock_product_id = "prod_mock_test"
+
+    with patch("stripe.Product.create") as mock_stripe_create:
+        result = adapter.create_product(
+            mock_product_name, mock_product_description, mock_product_id
+        )
+        mock_stripe_create.assert_not_called()
+        adapter.logger.info.assert_called_with(
+            f"Mocking create_product for name: {mock_product_name}"
+        )
+        assert result["name"] == mock_product_name
+        assert result["description"] == mock_product_description
+        assert result["id"] == mock_product_id
+        assert result["object"] == "product"
+        assert result["active"] is True
+        assert result["livemode"] is False
+
+
+def test_stripe_adapter_mock_mode_retrieve_product(mock_stripe_adapter_unconfigured):
+    adapter = mock_stripe_adapter_unconfigured
+    mock_product_id = "prod_mock_retrieve"
+
+    with patch("stripe.Product.retrieve") as mock_stripe_retrieve:
+        result = adapter.retrieve_product(mock_product_id)
+        mock_stripe_retrieve.assert_not_called()
+        adapter.logger.info.assert_called_with(
+            f"Mocking retrieve_product for product_id: {mock_product_id}"
+        )
+        assert result["id"] == mock_product_id
+        assert result["name"] == f"Mock Product {mock_product_id}"
+        assert result["object"] == "product"
+        assert result["active"] is True
+        assert result["livemode"] is False
+
+
+def test_stripe_adapter_mock_mode_update_product(mock_stripe_adapter_unconfigured):
+    adapter = mock_stripe_adapter_unconfigured
+    mock_product_id = "prod_mock_update"
+    updated_name = "Updated Mock Product"
+    updated_description = "Updated Mock Description"
+    updated_active = False
+
+    with patch("stripe.Product.modify") as mock_stripe_modify:
+        result = adapter.update_product(
+            mock_product_id,
+            name=updated_name,
+            description=updated_description,
+            active=updated_active,
+        )
+        mock_stripe_modify.assert_not_called()
+        adapter.logger.info.assert_called_with(
+            f"Mocking update_product for product_id: {mock_product_id}"
+        )
+        assert result["id"] == mock_product_id
+        assert result["name"] == updated_name
+        assert result["description"] == updated_description
+        assert result["active"] is updated_active
+        assert result["object"] == "product"
+        assert result["livemode"] is False
+
+
+def test_stripe_adapter_mock_mode_archive_product(mock_stripe_adapter_unconfigured):
+    adapter = mock_stripe_adapter_unconfigured
+    mock_product_id = "prod_mock_archive"
+
+    with patch("stripe.Product.modify") as mock_stripe_modify:
+        result = adapter.archive_product(mock_product_id)
+        mock_stripe_modify.assert_not_called()
+        adapter.logger.info.assert_called_with(
+            f"Mocking archive_product for product_id: {mock_product_id}"
+        )
+        assert result["id"] == mock_product_id
+        assert result["active"] is False
+        assert result["object"] == "product"
+        assert result["livemode"] is False
