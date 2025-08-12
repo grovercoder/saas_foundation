@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional
 
+
 class AuthorizationManager:
     def __init__(self, logger: Any):
         self.logger = logger
@@ -11,17 +12,23 @@ class AuthorizationManager:
         for perm in permissions:
             # Basic validation: ensure 'key' is present
             if "key" not in perm or "name" not in perm or "description" not in perm:
-                self.logger.warning(f"Attempted to register permission with missing fields (key, name, or description): {perm}")
+                self.logger.warning(
+                    f"Attempted to register permission with missing fields (key, name, or description): {perm}"
+                )
                 continue
 
             # Check for duplicate key
             if any(rp["key"] == perm["key"] for rp in self._registered_permissions):
-                self.logger.warning(f"Permission with key '{perm['key']}' already registered. Skipping.")
+                self.logger.warning(
+                    f"Permission with key '{perm['key']}' already registered. Skipping."
+                )
                 continue
 
             # Validate key format (object:action)
             if not isinstance(perm.get("key"), str) or ":" not in perm["key"]:
-                self.logger.warning(f"Attempted to register permission with invalid key format: {perm}")
+                self.logger.warning(
+                    f"Attempted to register permission with invalid key format: {perm}"
+                )
                 continue
 
             self._registered_permissions.append(perm)
@@ -35,11 +42,18 @@ class AuthorizationManager:
         """Defines a new role and assigns permissions to it."""
         # Ensure all permissions being assigned are actually registered
         for perm_to_assign in permissions:
-            if not any(rp["key"] == perm_to_assign["key"] for rp in self._registered_permissions):
-                self.logger.warning(f"Attempted to assign unregistered permission '{perm_to_assign.get('key', 'N/A')}' to role '{role_name}'. Skipping.")
+            if not any(
+                rp["key"] == perm_to_assign["key"]
+                for rp in self._registered_permissions
+            ):
+                self.logger.warning(
+                    f"Attempted to assign unregistered permission '{perm_to_assign.get('key', 'N/A')}' to role '{role_name}'. Skipping."
+                )
                 continue
         self._roles[role_name] = permissions
-        self.logger.info(f"Defined role '{role_name}' with {len(permissions)} permissions.")
+        self.logger.info(
+            f"Defined role '{role_name}' with {len(permissions)} permissions."
+        )
 
     def get_role_permissions(self, role_name: str) -> List[Dict[str, str]]:
         """Returns the permissions associated with a given role."""
@@ -52,7 +66,7 @@ class AuthorizationManager:
         resource_type: str,
         resource_id: Optional[Any] = None,
         resource_owner_id: Optional[Any] = None,
-        user_id: Optional[Any] = None
+        user_id: Optional[Any] = None,
     ) -> bool:
         """
         Checks if a user (identified by their roles and optionally user_id) is authorized
@@ -69,7 +83,9 @@ class AuthorizationManager:
         Returns:
             True if the user is authorized, False otherwise.
         """
-        self.logger.debug(f"Checking authorization for user_roles={user_roles}, action={action}, resource_type={resource_type}, resource_id={resource_id}, resource_owner_id={resource_owner_id}, user_id={user_id}")
+        self.logger.debug(
+            f"Checking authorization for user_roles={user_roles}, action={action}, resource_type={resource_type}, resource_id={resource_id}, resource_owner_id={resource_owner_id}, user_id={user_id}"
+        )
 
         # Default deny principle
         if not user_roles:
@@ -86,17 +102,31 @@ class AuthorizationManager:
             # Check if the permission matches the requested action and resource type
             if perm.get("action") == action and perm.get("resource") == resource_type:
                 scope = perm.get("scope")
-                perm_id = perm.get("id") # Specific resource ID from permission
+                perm_id = perm.get("id")  # Specific resource ID from permission
 
                 if scope == "global" or scope == "any":
-                    self.logger.debug(f"Access granted by global/any permission: {perm}")
+                    self.logger.debug(
+                        f"Access granted by global/any permission: {perm}"
+                    )
                     return True
                 elif scope == "own":
-                    if user_id is not None and resource_owner_id is not None and user_id == resource_owner_id:
-                        self.logger.debug(f"Access granted by 'own' scope permission: {perm}")
+                    if (
+                        user_id is not None
+                        and resource_owner_id is not None
+                        and user_id == resource_owner_id
+                    ):
+                        self.logger.debug(
+                            f"Access granted by 'own' scope permission: {perm}"
+                        )
                         return True
-                elif perm_id is not None and resource_id is not None and perm_id == resource_id:
-                    self.logger.debug(f"Access granted by specific resource ID permission: {perm}")
+                elif (
+                    perm_id is not None
+                    and resource_id is not None
+                    and perm_id == resource_id
+                ):
+                    self.logger.debug(
+                        f"Access granted by specific resource ID permission: {perm}"
+                    )
                     return True
 
         self.logger.debug("No matching permission found, denying access.")

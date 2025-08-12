@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
 
+
 class PaymentGatewayAdapter(ABC):
     @abstractmethod
-    def process_payment(self, amount: float, currency: str, token: str, description: str) -> dict:
+    def process_payment(
+        self, amount: float, currency: str, token: str, description: str
+    ) -> dict:
         pass
 
     @abstractmethod
@@ -18,7 +21,9 @@ class PaymentGatewayAdapter(ABC):
         pass
 
     @abstractmethod
-    def attach_payment_method_to_customer(self, customer_id: str, payment_method_id: str) -> dict:
+    def attach_payment_method_to_customer(
+        self, customer_id: str, payment_method_id: str
+    ) -> dict:
         pass
 
     @abstractmethod

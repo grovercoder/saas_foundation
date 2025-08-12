@@ -1,5 +1,6 @@
 from saas_foundation.datastore.database import execute_query, fetch_one, fetch_all
 
+
 class BaseDAO:
     def __init__(self, table_name, connection, logger):
         self.table_name = table_name
@@ -7,10 +8,12 @@ class BaseDAO:
         self.logger = logger
 
     def insert(self, data):
-        columns = ', '.join(data.keys())
-        placeholders = ', '.join(['?' for _ in data.values()])
+        columns = ", ".join(data.keys())
+        placeholders = ", ".join(["?" for _ in data.values()])
         query = f"INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders})"
-        cursor = execute_query(query, tuple(data.values()), conn=self.connection, logger=self.logger)
+        cursor = execute_query(
+            query, tuple(data.values()), conn=self.connection, logger=self.logger
+        )
         return cursor.lastrowid
 
     def get_by_id(self, int_id):
@@ -26,9 +29,14 @@ class BaseDAO:
         return [dict(row) for row in rows]
 
     def update(self, int_id, data):
-        set_clauses = ', '.join([f"{key} = ?" for key in data.keys()])
+        set_clauses = ", ".join([f"{key} = ?" for key in data.keys()])
         query = f"UPDATE {self.table_name} SET {set_clauses} WHERE id = ?"
-        execute_query(query, tuple(list(data.values()) + [int_id]), conn=self.connection, logger=self.logger)
+        execute_query(
+            query,
+            tuple(list(data.values()) + [int_id]),
+            conn=self.connection,
+            logger=self.logger,
+        )
 
     def delete(self, int_id):
         query = f"DELETE FROM {self.table_name} WHERE id = ?"

@@ -10,11 +10,13 @@ from src.email_services.manager import EmailManager
 from dataclasses import dataclass, field
 from typing import Optional
 
+
 @dataclass
 class User:
     id: int
     name: str
     email: str
+
 
 @dataclass
 class Product:
@@ -22,14 +24,22 @@ class Product:
     product_name: str
     price: float
 
+
 def main():
-    load_dotenv() # Load environment variables from .env file
+    load_dotenv()  # Load environment variables from .env file
 
     parser = argparse.ArgumentParser(description="Library Orchestration Application")
-    parser.add_argument("--mode", type=str, default="dev",
-                        help="Application mode (e.g., 'dev', 'run_workflow')")
-    parser.add_argument("--workflow_id", type=str,
-                        help="ID of the workflow to execute (if mode is 'run_workflow')")
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="dev",
+        help="Application mode (e.g., 'dev', 'run_workflow')",
+    )
+    parser.add_argument(
+        "--workflow_id",
+        type=str,
+        help="ID of the workflow to execute (if mode is 'run_workflow')",
+    )
 
     args = parser.parse_args()
 
@@ -53,11 +63,16 @@ def main():
 
     authorization_manager = AuthorizationManager(logger)
     payment_gateway_manager = PaymentGatewayManager(logger)
-    multi_tenant_manager = MultiTenantManager(logger, datastore_manager, authorization_manager)
-    subscription_manager = SubscriptionManager(logger, datastore_manager, payment_gateway_manager, authorization_manager)
+    multi_tenant_manager = MultiTenantManager(
+        logger, datastore_manager, authorization_manager
+    )
+    subscription_manager = SubscriptionManager(
+        logger, datastore_manager, payment_gateway_manager, authorization_manager
+    )
 
     # Placeholder for future workflow execution or other service-level operations
     logger.info(f"Application running in {args.mode} mode.")
+
 
 if __name__ == "__main__":
     main()

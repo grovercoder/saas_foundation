@@ -7,12 +7,16 @@ from unittest.mock import Mock
 from saas_foundation.datastore.manager import DatastoreManager
 from saas_foundation.datastore.database import get_db_connection, execute_query
 from saas_foundation.multi_tenant.manager import MultiTenantManager, MODULE_PERMISSIONS
-from saas_foundation.authorization.manager import AuthorizationManager # Import AuthorizationManager
+from saas_foundation.authorization.manager import (
+    AuthorizationManager,
+)  # Import AuthorizationManager
 from saas_foundation.multi_tenant.models import Account, User
+
 
 @pytest.fixture
 def mock_logger():
     return Mock()
+
 
 # Use an in-memory database for testing
 @pytest.fixture(scope="function")
@@ -20,7 +24,7 @@ def db_connection(mock_logger):
     original_db_path = os.getenv("DB_PATH")
     original_db_name = os.getenv("DB_NAME")
 
-    os.environ["DB_PATH"] = "" # Set DB_PATH to empty for in-memory tests
+    os.environ["DB_PATH"] = ""  # Set DB_PATH to empty for in-memory tests
     os.environ["DB_NAME"] = ":memory:"
 
     conn = get_db_connection(mock_logger)
@@ -37,38 +41,47 @@ def db_connection(mock_logger):
     else:
         del os.environ["DB_NAME"]
 
-    
 
 @pytest.fixture(scope="function")
 def setup_multi_tenant_db(db_connection, mock_logger):
     # Ensure tables are clean before each test
     execute_query("DROP TABLE IF EXISTS users", conn=db_connection, logger=mock_logger)
-    execute_query("DROP TABLE IF EXISTS accounts", conn=db_connection, logger=mock_logger)
+    execute_query(
+        "DROP TABLE IF EXISTS accounts", conn=db_connection, logger=mock_logger
+    )
 
     # Initialize DatastoreManager with multi_tenant entities
-    datastore_manager = DatastoreManager(mock_logger, [Account, User], connection=db_connection)
+    datastore_manager = DatastoreManager(
+        mock_logger, [Account, User], connection=db_connection
+    )
     yield datastore_manager
+
 
 @pytest.fixture(scope="function")
 def auth_manager(mock_logger):
     return AuthorizationManager(mock_logger)
 
+
 @pytest.fixture(scope="function")
 def multi_tenant_manager(setup_multi_tenant_db, auth_manager, mock_logger):
     return MultiTenantManager(mock_logger, setup_multi_tenant_db, auth_manager)
+
 
 @pytest.fixture(scope="function")
 def multi_tenant_manager_no_auth(setup_multi_tenant_db, mock_logger):
     return MultiTenantManager(mock_logger, setup_multi_tenant_db)
 
 
-def test_multi_tenant_manager_registers_permissions(auth_manager, setup_multi_tenant_db, mock_logger):
+def test_multi_tenant_manager_registers_permissions(
+    auth_manager, setup_multi_tenant_db, mock_logger
+):
     # Create manager with auth_manager
     MultiTenantManager(mock_logger, setup_multi_tenant_db, auth_manager)
     registered_permissions = auth_manager.get_registered_permissions()
     assert len(registered_permissions) == len(MODULE_PERMISSIONS)
     for perm in MODULE_PERMISSIONS:
         assert perm in registered_permissions
+
 
 def test_multi_tenant_manager_no_auth_registration(setup_multi_tenant_db, mock_logger):
     # Ensure no permissions are registered if auth_manager is not provided

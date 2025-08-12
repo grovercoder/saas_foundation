@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+
 @dataclass
 class Account:
     id: int
     name: str
     created_at: datetime | None = None
+
 
 @dataclass
 class User:

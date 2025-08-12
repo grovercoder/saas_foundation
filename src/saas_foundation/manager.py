@@ -1,5 +1,4 @@
 
-import os
 
 from saas_foundation.logging_system.manager import LogManager
 from saas_foundation.datastore.manager import DatastoreManager
@@ -19,16 +18,20 @@ class SaasManager:
         self.datastore_manager = DatastoreManager(logger=self.log_manager.get_logger())
 
         # Initialize other managers that do not have complex dependencies yet
-        self.payment_gateway_manager = PaymentGatewayManager(logger=self.log_manager.get_logger())
+        self.payment_gateway_manager = PaymentGatewayManager(
+            logger=self.log_manager.get_logger()
+        )
 
         # Initialize AuthorizationManager, which depends on DatastoreManager
-        self.authorization_manager = AuthorizationManager(logger=self.log_manager.get_logger())
+        self.authorization_manager = AuthorizationManager(
+            logger=self.log_manager.get_logger()
+        )
 
         # Initialize MultiTenantManager, which depends on DatastoreManager and AuthorizationManager
         self.multi_tenant_manager = MultiTenantManager(
             logger=self.log_manager.get_logger(),
             datastore_manager=self.datastore_manager,
-            authorization_manager=self.authorization_manager
+            authorization_manager=self.authorization_manager,
         )
 
         # Initialize SubscriptionManager, which depends on several other managers
@@ -37,7 +40,7 @@ class SaasManager:
             datastore_manager=self.datastore_manager,
             payment_gateway_manager=self.payment_gateway_manager,
             multi_tenant_manager=self.multi_tenant_manager,
-            authorization_manager=self.authorization_manager
+            authorization_manager=self.authorization_manager,
         )
 
     def get_log_manager(self) -> LogManager:

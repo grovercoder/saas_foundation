@@ -50,6 +50,8 @@ The application will include the following internal modules to provide core func
         *   **Features:** Define capabilities provided by a tier. They have a "key", "name", "description", and a list of "permissions" (keys for relevant permissions a feature must have). These permissions become the default list to check for when verifying a user's authorization based on their account's tier.
         *   **Tiers:** Consist of "key", "status", "name", "description", "monthly_cost", "yearly_cost", "features" (list of feature keys), and "limits" (dictionary of limit_key: value).
         *   When a tier is created, a database record is created. A corresponding Stripe product is also created.
+        *   When a tier is created, corresponding Stripe Price objects (for monthly and yearly costs) are also created and associated with the Stripe Product.
+        *   When a tier is deleted, its corresponding Stripe Product is archived (deactivated) in Stripe.
         *   A tier cannot be removed unless it is deactivated (status set to "deactivated"). It cannot be deactivated unless the tier has no active accounts associated with it.
         *   Tier status can be set to "active:public", "active:private", " "draft", or "deactivated".
     *   **Subscription Management:** Handles creating, updating, and managing individual subscriptions.

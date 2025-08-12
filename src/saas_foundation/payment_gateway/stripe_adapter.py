@@ -267,3 +267,89 @@ class StripeAdapter(PaymentGatewayAdapter):
         except stripe.error.StripeError as e:
             self.logger.error(f"Stripe error archiving product: {e}")
             raise ValueError(f"Stripe error archiving product: {e}") from e
+
+    def create_price(
+        self,
+        product_id: str,
+        unit_amount: float,
+        currency: str,
+        recurring_interval: str = None,  # "day", "week", "month", "year"
+        recurring_interval_count: int = 1,
+        nickname: str = None,
+    ) -> dict:
+        if self._mock_mode:
+            self.logger.info(
+                f"Mocking create_price for product_id: {product_id}, amount: {unit_amount}"
+            )
+            mock_id = f"price_mock_{product_id}_{unit_amount}_{currency}"
+            return {
+                "id": mock_id,
+                "object": "price",
+                "active": True,
+                "billing_scheme": "per_unit",
+                "created": 1678886400,
+                "currency": currency,
+                "livemode": False,
+                "lookup_key": None,
+                "metadata": {},
+                "nickname": nickname,
+                "product": product_id,
+                "recurring": (
+                    {
+                        "interval": recurring_interval,
+                        "interval_count": recurring_interval_count,
+                        "usage_type": "licensed",
+                    }
+                    if recurring_interval
+                    else None
+                ),
+                "tax_behavior": "unspecified",
+                "type": "recurring" if recurring_interval else "one_time",
+                "unit_amount": int(unit_amount * 100),
+                "unit_amount_decimal": str(unit_amount * 100),
+            }
+        try:
+            price_data = {
+                "product": product_id,
+                "unit_amount": int(unit_amount * 100),  # Stripe expects amount in cents
+                "currency": currency,
+            }
+            if recurring_interval:
+                price_data["recurring"] = {
+                    "interval": recurring_interval,
+                    "interval_count": recurring_interval_count,
+                }
+            if nickname:
+                price_data["nickname"] = nickname
+
+            price = stripe.Price.create(**price_data)
+            return price.to_dict()
+        except stripe.error.StripeError as e:
+            self.logger.error(f"Stripe error creating price: {e}")
+            raise ValueError(f"Stripe error creating price: {e}") from e
+
+    def get_subscription(self, subscription_id: str) -> dict:
+        if self._mock_mode:
+            self.logger.info(f"Mocking get_subscription for {subscription_id}")
+            return {
+                "id": subscription_id,
+                "items": {
+                    "data": [
+                        {
+                            "price": {
+                                "product": "prod_mock_basic_tier",
+                            }
+                        }
+                    ]
+                },
+                "status": "active",
+                "current_period_start": 1678886400,
+                "current_period_end": 1681564800,
+                "cancel_at_period_end": False,
+            }
+        try:
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            return subscription.to_dict()
+        except stripe.error.StripeError as e:
+            self.logger.error(f"Stripe error retrieving subscription: {e}")
+            raise ValueError(f"Stripe error retrieving subscription: {e}") from e

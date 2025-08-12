@@ -2,8 +2,7 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Any, Dict, Optional
-
+from typing import Any, Optional
 
 
 class EmailManager:
@@ -11,23 +10,30 @@ class EmailManager:
         self.logger = logger
 
         self.smtp_server = os.getenv("SMTP_SERVER")
-        self.smtp_port = int(os.getenv("SMTP_PORT", 587))
+        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
         self.smtp_username = os.getenv("SMTP_USERNAME")
         self.smtp_password = os.getenv("SMTP_PASSWORD")
         self.smtp_use_tls = os.getenv("SMTP_USE_TLS", "True").lower() == "true"
         self.smtp_sender_email = os.getenv("SMTP_SENDER_EMAIL")
 
-        if not all([self.smtp_server, self.smtp_username, self.smtp_password, self.smtp_sender_email]):
-            self.logger.warning("SMTP environment variables are not fully configured. Email sending may fail.")
-
-    
+        if not all(
+            [
+                self.smtp_server,
+                self.smtp_username,
+                self.smtp_password,
+                self.smtp_sender_email,
+            ]
+        ):
+            self.logger.warning(
+                "SMTP environment variables are not fully configured. Email sending may fail."
+            )
 
     def send_email(
         self,
         to_email: str,
         subject: str,
         text_content: Optional[str] = None,
-        html_content: Optional[str] = None
+        html_content: Optional[str] = None,
     ):
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -48,7 +54,11 @@ class EmailManager:
                     server.starttls()
                 server.login(self.smtp_username, self.smtp_password)
                 server.sendmail(self.smtp_sender_email, to_email, msg.as_string())
-            self.logger.info(f"Email sent successfully to {to_email} with subject '{subject}'.")
+            self.logger.info(
+                f"Email sent successfully to {to_email} with subject '{subject}'."
+            )
         except Exception as e:
-            self.logger.error(f"Failed to send email to {to_email} with subject '{subject}': {e}")
+            self.logger.error(
+                f"Failed to send email to {to_email} with subject '{subject}': {e}"
+            )
             raise

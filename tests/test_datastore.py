@@ -2,12 +2,20 @@ import pytest
 import os
 import sqlite3
 from unittest.mock import Mock
-from saas_foundation.datastore.database import get_db_connection, execute_query, fetch_one, fetch_all
+from saas_foundation.datastore.database import (
+    get_db_connection,
+    execute_query,
+    fetch_one,
+    fetch_all,
+)
 from saas_foundation.datastore.schema import create_tables_from_entity_definitions
 from saas_foundation.datastore.dao import BaseDAO
-from saas_foundation.datastore.manager import DatastoreManager # Added import for DatastoreManager
+from saas_foundation.datastore.manager import (
+    DatastoreManager,
+)  # Added import for DatastoreManager
 from dataclasses import dataclass, field
 from typing import Optional
+
 
 @dataclass
 class TestUser:
@@ -15,15 +23,18 @@ class TestUser:
     name: str
     email: str
 
+
 @dataclass
 class TestProduct:
     id: int
     product_name: str
     price: float
 
+
 @pytest.fixture
 def mock_logger():
     return Mock()
+
 
 # Use an in-memory database for testing
 @pytest.fixture(scope="function")
@@ -33,7 +44,7 @@ def db_connection(mock_logger):
     original_db_path = os.getenv("DB_PATH")
 
     os.environ["DB_NAME"] = ":memory:"
-    os.environ["DB_PATH"] = "" # Set DB_PATH to empty for in-memory tests
+    os.environ["DB_PATH"] = ""  # Set DB_PATH to empty for in-memory tests
 
     conn = get_db_connection(mock_logger)
     yield conn
@@ -51,10 +62,10 @@ def db_connection(mock_logger):
         del os.environ["DB_PATH"]
 
 
-
 @pytest.fixture(scope="function")
 def datastore_manager(datastore_manager_with_models):
     return datastore_manager_with_models
+
 
 @pytest.fixture(scope="function")
 def datastore_manager_with_models(db_connection, mock_logger):
@@ -62,7 +73,9 @@ def datastore_manager_with_models(db_connection, mock_logger):
     db_connection.execute("DROP TABLE IF EXISTS testusers")
     db_connection.execute("DROP TABLE IF EXISTS testproducts")
     # Initialize DatastoreManager with models and pass the connection
-    manager = DatastoreManager(mock_logger, [TestUser, TestProduct], connection=db_connection)
+    manager = DatastoreManager(
+        mock_logger, [TestUser, TestProduct], connection=db_connection
+    )
     return manager
 
 
@@ -84,26 +97,34 @@ def test_insert_and_get_user(datastore_manager_with_models):
     user_data = {"name": "Test User", "email": "test@example.com"}
     int_id = datastore_manager_with_models.insert("testusers", user_data)
     assert int_id is not None
-    assert isinstance(int_id, int) # Should be an integer ID
+    assert isinstance(int_id, int)  # Should be an integer ID
 
     retrieved_user = datastore_manager_with_models.get_by_id("testusers", int_id)
     assert retrieved_user is not None
     assert retrieved_user["name"] == "Test User"
     assert retrieved_user["email"] == "test@example.com"
-    assert retrieved_user["id"] == int_id # ID should be the integer ID
+    assert retrieved_user["id"] == int_id  # ID should be the integer ID
 
 
 def test_get_all_users(datastore_manager_with_models):
-    datastore_manager_with_models.insert("testusers", {"name": "User 1", "email": "user1@example.com"})
-    datastore_manager_with_models.insert("testusers", {"name": "User 2", "email": "user2@example.com"})
+    datastore_manager_with_models.insert(
+        "testusers", {"name": "User 1", "email": "user1@example.com"}
+    )
+    datastore_manager_with_models.insert(
+        "testusers", {"name": "User 2", "email": "user2@example.com"}
+    )
 
     users = datastore_manager_with_models.get_all("testusers")
     assert len(users) == 2
-    assert all(isinstance(user["id"], int) for user in users) # All IDs should be integer IDs
+    assert all(
+        isinstance(user["id"], int) for user in users
+    )  # All IDs should be integer IDs
 
 
 def test_update_user(datastore_manager_with_models):
-    int_id = datastore_manager_with_models.insert("testusers", {"name": "Old Name", "email": "old@example.com"})
+    int_id = datastore_manager_with_models.insert(
+        "testusers", {"name": "Old Name", "email": "old@example.com"}
+    )
     datastore_manager_with_models.update("testusers", int_id, {"name": "New Name"})
 
     updated_user = datastore_manager_with_models.get_by_id("testusers", int_id)
@@ -112,7 +133,9 @@ def test_update_user(datastore_manager_with_models):
 
 
 def test_delete_user(datastore_manager_with_models):
-    int_id = datastore_manager_with_models.insert("testusers", {"name": "Delete Me", "email": "delete@example.com"})
+    int_id = datastore_manager_with_models.insert(
+        "testusers", {"name": "Delete Me", "email": "delete@example.com"}
+    )
     datastore_manager_with_models.delete("testusers", int_id)
 
     deleted_user = datastore_manager_with_models.get_by_id("testusers", int_id)
@@ -120,7 +143,9 @@ def test_delete_user(datastore_manager_with_models):
 
 
 def test_datastore_manager_initialization(db_connection, mock_logger):
-    manager = DatastoreManager(mock_logger, [TestUser, TestProduct], connection=db_connection)
+    manager = DatastoreManager(
+        mock_logger, [TestUser, TestProduct], connection=db_connection
+    )
     assert manager.get_dao("testusers") is not None
     assert isinstance(manager.get_dao("testusers"), BaseDAO)
     assert manager.get_dao("testproducts") is not None
@@ -133,15 +158,17 @@ def test_datastore_manager_initialization(db_connection, mock_logger):
     assert len(cursor.fetchall()) > 0
 
 
-def test_datastore_manager_register_entities(datastore_manager_with_models, db_connection):
+def test_datastore_manager_register_entities(
+    datastore_manager_with_models, db_connection
+):
     manager = datastore_manager_with_models
-    
+
     @dataclass
     class NewEntity1:
         id: int
         hash_id: str
         name: str
-    
+
     @dataclass
     class NewEntity2:
         id: int
@@ -163,11 +190,7 @@ def test_datastore_manager_register_entities(datastore_manager_with_models, db_c
 
 def test_datastore_manager_get_dao_invalid_entity(datastore_manager_with_models):
     manager = datastore_manager_with_models
-    with pytest.raises(ValueError, match="DAO for entity 'non_existent_entity' not found."):
+    with pytest.raises(
+        ValueError, match="DAO for entity 'non_existent_entity' not found."
+    ):
         manager.get_dao("non_existent_entity")
-
-
-
-
-
-
