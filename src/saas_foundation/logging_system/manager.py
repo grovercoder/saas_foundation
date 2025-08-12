@@ -17,11 +17,6 @@ class LogManager:
             cls._instance._initialize(log_file, max_bytes, backup_count)
         return cls._instance
 
-    def __init__(self, *args, **kwargs):
-        # Pylint expects attributes to be defined in __init__
-        # Actual initialization happens in _initialize
-        self.logger = None
-
     def _initialize(self, log_file, max_bytes, backup_count):
         self.logger = logging.getLogger("application_logger")
         self.logger.setLevel(logging.INFO)
